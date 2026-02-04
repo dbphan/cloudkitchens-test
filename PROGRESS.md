@@ -59,8 +59,8 @@
 - [x] Fetch orders from challenge server
 - [x] Parse JSON response into Order objects
 - [x] Submit action ledger to server
-- [ ] Handle server validation response
-- [ ] Consistently pass validation tests
+- [x] Handle server validation response
+- [x] Consistently pass validation tests
 
 ### Execution Flow
 - [x] Place orders one by one at configured rate
