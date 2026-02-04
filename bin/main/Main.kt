@@ -27,10 +27,13 @@ import kotlinx.io.IOException
 class Main : CliktCommand() {
     /** The Cloud Kitchens API endpoint URL */
     private val endpoint by
-            option().default("https://api.cloudkitchens.com").help("Problem server endpoint")
+            option().default(System.getenv("ENDPOINT") ?: "https://api.cloudkitchens.com")
+                    .help("Problem server endpoint")
 
     /** Authentication token required for API access */
-    private val auth by option().help("Authentication token (required)").required()
+    private val auth by
+            option().default(System.getenv("AUTH_TOKEN") ?: "")
+                    .help("Authentication token (required)")
 
     /** Optional problem name identifier */
     private val name by option().help("Problem name. Leave blank (optional)")

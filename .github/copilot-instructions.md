@@ -202,12 +202,15 @@ Always ensure:
 
 For complex commits with multi-line messages:
 
-1. **Create temporary commit message file**: `COMMIT_MSG.md` in project root
-2. **Write detailed commit message** in the file with proper formatting
-3. **Use file for commit**: `git commit -F COMMIT_MSG.md`
-4. **Remove file after successful commit**: `rm COMMIT_MSG.md`
+1. **Check git status** to see all modified/untracked files
+2. **Ask user which files to add** - show the list and confirm which files should be included in the commit
+3. **Stage the approved files**: `git add <files>`
+4. **Create temporary commit message file**: `COMMIT_MSG.md` in project root
+5. **Write detailed commit message** in the file with proper formatting
+6. **Use file for commit**: `git commit -F COMMIT_MSG.md`
+7. **Remove file after successful commit**: `rm COMMIT_MSG.md`
 
-This avoids terminal issues with multi-line strings and allows proper formatting of commit messages.
+This ensures user reviews what's being committed and avoids terminal issues with multi-line strings.
 
 ## Documentation
 
