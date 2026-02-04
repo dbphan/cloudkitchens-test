@@ -11,12 +11,15 @@ import kotlinx.datetime.Clock
  * Manages kitchen operations including order placement, storage, and removal.
  *
  * Coordinates between different storage containers (cooler, heater, shelf) and implements placement
- * logic according to temperature requirements.
+ * logic according to temperature requirements. Uses a sub-linear discard algorithm when shelf is
+ * full.
  */
 class KitchenManager {
     private val cooler = Cooler()
     private val heater = Heater()
     private val shelf = Shelf()
+
+    private val discardStrategy = DiscardStrategy()
 
     private val actions = mutableListOf<Action>()
 
@@ -56,6 +59,7 @@ class KitchenManager {
         if (order.temp != "room" && !shelf.isFull()) {
             storedOrder.currentLocation = SHELF
             if (shelf.add(storedOrder)) {
+                discardStrategy.addOrder(storedOrder) // Track in discard strategy
                 actions.add(Action(timestamp, order.id, PLACE, SHELF))
                 println(
                         "[PLACE] Order ${order.id} (${order.name}) placed in shelf (${idealLocation} full)"
@@ -64,11 +68,90 @@ class KitchenManager {
             }
         }
 
-        // TODO: Implement shelf full logic
-        // - Try to move an existing shelf order to cooler/heater
-        // - If no move possible, discard an order
+        // Shelf is full - try to move an existing shelf order to ideal storage
+        if (shelf.isFull() && order.temp != "room") {
+            if (handleShelfOverflow(order, storedOrder, idealStorage, idealLocation, timestamp)) {
+                return true
+            }
+        }
 
         println("[FAILED] Could not place order ${order.id} - all storage full")
+        return false
+    }
+
+    /**
+     * Handles shelf overflow when both ideal storage and shelf are full.
+     *
+     * Strategy:
+     * 1. Try to move a shelf order to its ideal storage if space becomes available
+     * 2. If no moves possible, discard the order with lowest value from shelf
+     * 3. Place the new order in the freed space
+     *
+     * @param newOrder The original order to place
+     * @param newStoredOrder The stored order wrapper
+     * @param idealStorage The ideal storage for the new order
+     * @param idealLocation The location name of ideal storage
+     * @param timestamp Current timestamp
+     * @return true if overflow was handled and order was placed
+     */
+    private suspend fun handleShelfOverflow(
+            newOrder: Order,
+            newStoredOrder: StoredOrder,
+            idealStorage: com.css.challenge.storage.StorageContainer,
+            idealLocation: String,
+            timestamp: kotlinx.datetime.Instant
+    ): Boolean {
+        // Try to move a shelf order to cooler or heater if space available
+        val shelfOrders = shelf.getAll()
+        for (shelfOrder in shelfOrders) {
+            val moveTarget =
+                    when (shelfOrder.order.temp) {
+                        "hot" -> if (!heater.isFull()) Pair(heater, HEATER) else null
+                        "cold" -> if (!cooler.isFull()) Pair(cooler, COOLER) else null
+                        else -> null
+                    }
+
+            if (moveTarget != null) {
+                val (targetStorage, targetLocation) = moveTarget
+                shelf.remove(shelfOrder.order.id)
+                discardStrategy.removeOrderById(shelfOrder.order.id)
+
+                shelfOrder.currentLocation = targetLocation
+                targetStorage.add(shelfOrder)
+
+                actions.add(Action(timestamp, shelfOrder.order.id, MOVE, targetLocation))
+                println("[MOVE] Order ${shelfOrder.order.id} moved from shelf to $targetLocation")
+
+                // Now place new order on shelf
+                newStoredOrder.currentLocation = SHELF
+                shelf.add(newStoredOrder)
+                discardStrategy.addOrder(newStoredOrder)
+                actions.add(Action(timestamp, newOrder.id, PLACE, SHELF))
+                println(
+                        "[PLACE] Order ${newOrder.id} (${newOrder.name}) placed in shelf after move"
+                )
+                return true
+            }
+        }
+
+        // No moves possible - discard lowest value order from shelf
+        val lowestValueOrder = discardStrategy.pollLowestValueOrder()
+        if (lowestValueOrder != null) {
+            shelf.remove(lowestValueOrder.order.id)
+            actions.add(Action(timestamp, lowestValueOrder.order.id, DISCARD, SHELF))
+            println(
+                    "[DISCARD] Order ${lowestValueOrder.order.id} (${lowestValueOrder.order.name}) discarded (lowest value)"
+            )
+
+            // Place new order in freed space
+            newStoredOrder.currentLocation = SHELF
+            shelf.add(newStoredOrder)
+            discardStrategy.addOrder(newStoredOrder)
+            actions.add(Action(timestamp, newOrder.id, PLACE, SHELF))
+            println("[PLACE] Order ${newOrder.id} (${newOrder.name}) placed in shelf after discard")
+            return true
+        }
+
         return false
     }
 
@@ -90,6 +173,11 @@ class KitchenManager {
         if (storedOrder == null) {
             println("[PICKUP] Order $orderId not found")
             return false
+        }
+
+        // Remove from discard strategy if it was on shelf
+        if (storedOrder.currentLocation == SHELF) {
+            discardStrategy.removeOrderById(orderId)
         }
 
         // Check if order is still fresh
