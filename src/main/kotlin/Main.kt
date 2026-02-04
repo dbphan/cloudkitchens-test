@@ -1,9 +1,7 @@
 package com.css.challenge
 
-import com.css.challenge.client.Action
-import com.css.challenge.client.COOLER
 import com.css.challenge.client.Client
-import com.css.challenge.client.PLACE
+import com.css.challenge.manager.KitchenManager
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.options.*
@@ -13,9 +11,7 @@ import io.ktor.client.engine.cio.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock.System.now
+import kotlinx.coroutines.*
 import kotlinx.io.IOException
 
 /**
@@ -59,8 +55,9 @@ class Main : CliktCommand() {
     /**
      * Executes the main application logic.
      *
-     * Fetches a new problem from the API, processes orders sequentially, and submits the solution
-     * for evaluation.
+     * Fetches a new problem from the API, processes orders sequentially at the configured rate,
+     * schedules driver pickups with random delays, waits for all pickups to complete, and submits
+     * the action ledger for evaluation.
      *
      * @throws IOException if communication with the API fails
      */
@@ -69,20 +66,67 @@ class Main : CliktCommand() {
             val client = Client(HttpClient(CIO), auth, endpoint)
             val problem = client.newProblem(name, seed)
 
-            // ------ Execution harness logic goes here using rate, min and max ----
+            println("========================================")
+            println("Cloud Kitchens Order Fulfillment System")
+            println("========================================")
+            println("Problem ID: ${problem.testId}")
+            println("Total Orders: ${problem.orders.size}")
+            println("Order Rate: $rate")
+            println("Pickup Time: $min - $max")
+            println("========================================\n")
 
-            val actions = mutableListOf<Action>()
-            for (order in problem.orders) {
-                println("Received: $order")
+            // Initialize kitchen manager
+            val kitchen = KitchenManager()
 
-                actions.add(Action(now(), order.id, PLACE, COOLER))
-                delay(rate)
+            // Process orders at configured rate
+            for ((index, order) in problem.orders.withIndex()) {
+                println(
+                        "[${index + 1}/${problem.orders.size}] Processing order: ${order.id} (${order.name})"
+                )
+
+                // Place order in kitchen
+                val placed = kitchen.placeOrder(order)
+
+                if (placed) {
+                    // Schedule driver pickup with random delay (runs in background)
+                    kitchen.scheduleDriverPickup(
+                            orderId = order.id,
+                            minPickupTime = min.inWholeSeconds.toInt(),
+                            maxPickupTime = max.inWholeSeconds.toInt(),
+                            scope = this
+                    )
+                } else {
+                    println("[WARNING] Failed to place order ${order.id}")
+                }
+
+                // Wait before processing next order (except for last order)
+                if (index < problem.orders.size - 1) {
+                    delay(rate)
+                }
             }
 
-            // ----------------------------------------------------------------------
+            println("\n========================================")
+            println("All orders placed. Waiting for pickups to complete...")
+            println("========================================\n")
 
+            // Wait for all active child coroutines (pickups) to complete
+            coroutineContext[Job]?.children?.forEach { it.join() }
+            println("All pickups complete!")
+            println("========================================\n")
+
+            // Get action ledger from kitchen manager
+            val actions = kitchen.getActions()
+
+            println("Submitting ${actions.size} actions to server...")
+
+            // Submit solution to server
             val result = client.solve(problem.testId, rate, min, max, actions)
-            println("Result: $result")
+
+            println("\n========================================")
+            println("Server Validation Result")
+            println("========================================")
+            println(result)
+            println("========================================")
         } catch (e: IOException) {
             println("Simulation failed: ${e.message}")
         }

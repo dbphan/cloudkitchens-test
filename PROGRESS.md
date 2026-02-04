@@ -58,18 +58,18 @@
 ### Server Integration
 - [x] Fetch orders from challenge server
 - [x] Parse JSON response into Order objects
-- [ ] Submit action ledger to server
+- [x] Submit action ledger to server
 - [ ] Handle server validation response
 - [ ] Consistently pass validation tests
 
 ### Execution Flow
-- [ ] Place orders one by one at configured rate
+- [x] Place orders one by one at configured rate
 - [x] Schedule driver pickup for each order (random time in min-max interval)
-- [ ] Process all orders concurrently
-- [ ] Wait for all pickups to complete
-- [ ] Submit final action list to server
-- [ ] Display validation result
-- [ ] Exit cleanly
+- [x] Process all orders concurrently
+- [x] Wait for all pickups to complete
+- [x] Submit final action list to server
+- [x] Display validation result
+- [x] Exit cleanly
 
 ## Concurrency Threading
 

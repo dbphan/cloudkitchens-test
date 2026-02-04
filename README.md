@@ -10,6 +10,7 @@ A real-time food order fulfillment system for a delivery-only kitchen. Manages c
 - ✅ **O(1) storage operations**: HashMap-based order lookup and retrieval
 - ✅ **Sub-linear discard algorithm**: PriorityQueue for O(1) minimum value lookup
 - ✅ **Driver pickup simulation**: Random timing within min-max interval using coroutines
+- ✅ **Full integration**: Complete execution flow from order placement to server validation
 - ⏳ **Server validation**: Consistent passing of challenge server tests (in progress)
 
 ## Architecture
@@ -90,6 +91,25 @@ ENDPOINT=https://api.cloudkitchens.com
 ```
 
 See `.env.example` for template.
+
+## Execution Flow
+
+The application executes the following workflow:
+
+1. **Fetch Problem**: Retrieves order list from Cloud Kitchens API
+2. **Initialize Kitchen**: Sets up thread-safe storage (Cooler, Heater, Shelf)
+3. **Process Orders**: Places orders sequentially at configured rate (--rate)
+   - Attempts ideal temperature storage first
+   - Falls back to shelf if ideal storage is full
+   - Handles shelf overflow with move-or-discard strategy
+4. **Schedule Pickups**: Launches concurrent coroutines for each order
+   - Random delay between --min and --max seconds
+   - Non-blocking execution using Kotlin coroutines
+5. **Wait for Completion**: Joins all pickup coroutines
+6. **Submit Results**: Sends action ledger to server for validation
+7. **Display Outcome**: Shows server validation result
+
+All actions (PLACE, MOVE, DISCARD, PICKUP) are tracked with timestamps for server submission.
 
 ## How to Run
 
