@@ -28,4 +28,16 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
     implementation("com.github.ajalt.clikt:clikt:5.0.1")
     implementation("org.slf4j:slf4j-jdk14:2.0.3")
+
+    // Testing dependencies
+    testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation("io.ktor:ktor-client-mock:3.0.1")
+    testImplementation("io.ktor:ktor-client-content-negotiation:3.0.1")
+    testImplementation("io.ktor:ktor-serialization-kotlinx-json:3.0.1")
+    testImplementation("com.github.ajalt.clikt:clikt:5.0.1")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
