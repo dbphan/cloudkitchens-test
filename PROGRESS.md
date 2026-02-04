@@ -3,26 +3,26 @@
 ## Core System Requirements
 
 ### Order Management System
-- [ ] Implement order data model with all attributes
+- [x] Implement order data model with all attributes
   - [x] ID (short identifier)
   - [x] Name (food name)
   - [x] Temperature (hot, cold, room)
   - [x] Price (in dollars)
   - [x] Freshness (duration in seconds)
-- [ ] Track order freshness degradation over time
-- [ ] Handle degradation at 2x speed when not at ideal temperature
+- [x] Track order freshness degradation over time
+- [x] Handle degradation at 2x speed when not at ideal temperature
 - [ ] Support concurrent order placement and removal
 
 ### Storage Implementation
-- [ ] Cooler - holds up to 6 cold orders at cold temperature
-- [ ] Heater - holds up to 6 hot orders at hot temperature
-- [ ] Shelf - holds up to 12 orders at room temperature
-- [ ] Thread-safe access to all storage locations
-- [ ] Real-time capacity tracking
+- [x] Cooler - holds up to 6 cold orders at cold temperature
+- [x] Heater - holds up to 6 hot orders at hot temperature
+- [x] Shelf - holds up to 12 orders at room temperature
+- [x] Thread-safe access to all storage locations (Mutex-based)
+- [x] Real-time capacity tracking
 
 ### Placement Logic
-- [ ] Try to place order at ideal temperature first
-- [ ] Use shelf if ideal storage is full
+- [x] Try to place order at ideal temperature first
+- [x] Use shelf if ideal storage is full
 - [ ] When shelf is full:
   - [ ] Attempt to move existing shelf order to cooler/heater if space available
   - [ ] If no move possible, select and discard an order from shelf
@@ -39,9 +39,9 @@
 - [ ] Maintain ledger of all actions for server submission
 
 ### Pickup/Removal Logic
-- [ ] Remove orders quickly without moving others
-- [ ] Check if order exists before removal
-- [ ] Discard orders that exceeded freshness at pickup time
+- [x] Remove orders quickly without moving others (O(1) HashMap removal)
+- [x] Check if order exists before removal
+- [x] Discard orders that exceeded freshness at pickup time
 - [ ] Simulate random pickup timing within configured interval
 
 ## Execution Harness
@@ -73,37 +73,39 @@
 
 ## Concurrency Threading
 
-- [ ] Design thread-safe storage system
-- [ ] Use appropriate concurrency primitives (Mutex, channels, etc.)
-- [ ] Handle concurrent placement and removal
-- [ ] Prevent race conditions
-- [ ] Ensure atomic operations where needed
-- [ ] Single-process, multi-threaded design
+- [x] Design thread-safe storage system (Mutex-based)
+- [x] Use appropriate concurrency primitives (Mutex for all shared state)
+- [x] Handle concurrent placement and removal (suspend functions)
+- [x] Prevent race conditions (Mutex.withLock)
+- [x] Ensure atomic operations where needed
+- [x] Single-process, multi-threaded design (Kotlin coroutines)
 
 ## Data Structures Algorithms
 
-- [ ] Efficient storage data structure selection
+- [x] Efficient storage data structure selection (HashMap for O(1) operations)
 - [ ] Sub-linear (better than O(n)) discard algorithm
-- [ ] Fast order lookup by ID
-- [ ] Efficient freshness calculation
-- [ ] Optimal memory usage
+- [x] Fast order lookup by ID (O(1) HashMap)
+- [x] Efficient freshness calculation (real-time with timestamps)
+- [x] Optimal memory usage
 
 ## Docker Deployment
 
 - [x] Dockerfile provided
-- [ ] Docker build succeeds
-- [ ] Docker run works with auth token
-- [ ] Preserves harness parameters
-- [ ] Can be invoked via Docker as specified
+- [x] Docker build succeeds
+- [x] Docker run works with auth token
+- [x] Preserves harness parameters
+- [x] Can be invoked via Docker as specified
+- [x] Scripts created (run-docker.sh, stop-docker.sh)
 
 ## Documentation
 
-- [ ] README with build instructions
-- [ ] README with run instructions
-- [ ] Explanation of discard selection criteria
-- [ ] Justification for discard algorithm choice
-- [ ] Document any ambiguous requirement decisions
-- [ ] Appropriate code comments (not overdone)
+- [x] README with build instructions
+- [x] README with run instructions
+- [x] Explanation of discard selection criteria
+- [x] Justification for discard algorithm choice
+- [x] Document any ambiguous requirement decisions
+- [x] Appropriate code comments (KDoc for all public APIs)
+- [x] .github/copilot-instructions.md with project guidelines
 
 ## Code Quality
 
@@ -118,16 +120,19 @@
 ## Testing
 
 - [x] Unit tests for data models
-  - [x] Order (7 tests)
-  - [x] Action (7 tests)
-  - [x] Problem (6 tests)
-  - [x] Client (6 tests)
-  - [x] Main CLI (5 tests)
-- [ ] Integration tests for storage system
+  - [x] Order (9 tests)
+  - [x] Action (5 tests)
+  - [x] Problem (5 tests)
+  - [x] Client (4 tests)
+  - [x] Main CLI (7 tests)
+- [x] Unit tests for storage system
+  - [x] StoredOrder (10 tests - freshness, temperature, expiration)
+  - [x] StorageContainer (13 tests - Cooler, Heater, Shelf operations)
+- [ ] Integration tests for complete workflow
 - [ ] Concurrency tests
 - [ ] Edge case tests
-- [ ] Freshness degradation tests
-- [ ] All tests pass consistently
+- [x] Freshness degradation tests
+- [x] All tests pass consistently (53 tests, 100% passing)
 
 ## Submission Checklist
 
@@ -143,32 +148,85 @@
 
 ## Current Status Summary
 
-### Completed
-- Basic scaffolding and CLI setup
-- Data models (Order, Action, Problem, Client)
-- Server integration (fetch orders)
-- Comprehensive test suite (31 tests, 100% passing)
-- KDoc documentation
-- Environment configuration (.env)
-- Docker scripts
+### ✅ Completed (30% progress)
+
+**Infrastructure & Setup:**
+- Repository initialization and git workflow (develop branch)
+- Environment configuration (.env, .gitignore)
+- Docker configuration and scripts (run-docker.sh, stop-docker.sh)
+- Local execution scripts (run.sh, stop.sh)
+- Comprehensive documentation (README.md, PROGRESS.md, copilot-instructions.md)
+
+**Data Models & API:**
+- Order, Action, Problem models with serialization
+- HTTP Client for challenge server (fetch orders, submit solutions)
+- CLI framework with Clikt (all parameters supported)
+- Server integration (successfully fetches orders)
+
+**Storage System:**
+- StorageContainer interface with suspend functions
+- Thread-safe implementations: Cooler (6), Heater (6), Shelf (12)
+- Mutex-based concurrency control
+- O(1) order lookup and operations using HashMap
+- Real-time capacity tracking
+
+**Order Management:**
+- StoredOrder model with freshness tracking
+- Freshness calculation with 2x decay for non-ideal temperature
+- Temperature matching and expiration detection
+- KitchenManager with basic placement logic (ideal → shelf fallback)
+- Order pickup with freshness validation
+
+**Testing:**
+- 53 tests total, 100% passing
+- Data model tests (Order, Action, Problem, Client, Main)
+- Storage system tests (StoredOrder, Cooler, Heater, Shelf)
+- Freshness degradation tests
+- Thread-safe operations tests
 
 ### 🚧 In Progress
-- Docker build (credential issues resolved, build in progress)
 
-### ❌ Not Started
-- Core kitchen fulfillment system (critical)
-- Storage implementation (Cooler, Heater, Shelf)
-- Placement logic
-- Discard algorithm (sub-linear complexity required)
-- Freshness tracking and degradation
-- Concurrent order processing
-- Driver pickup simulation
-- Action ledger submission
-- Server validation
+**Placement Logic:**
+- Need shelf overflow handling (move shelf orders to ideal storage when possible)
+- Need sub-linear discard algorithm when shelf is full and no moves available
+
+### ❌ Not Started (Critical)
+
+**Core Functionality:**
+- Driver pickup simulation with random timing
+- Full integration in Main.kt (order processing loop)
+- Action ledger submission to server
+- Server validation and consistent passing
+
+**Advanced Features:**
+- Sub-linear (O(log n)) discard algorithm with priority queue
+- Integration tests for complete workflow
+- Concurrency stress tests
 
 ### Next Priority
-Implement the core kitchen management system - this is the main challenge requirement!
 
+1. **Implement sub-linear discard algorithm** (most complex remaining piece)
+   - Use priority queue (heap) to track order values
+   - O(log n) insertion, O(1) minimum retrieval
+   - When shelf full: check for moves, else discard lowest value order
 
+2. **Add shelf overflow logic to KitchenManager**
+   - Try moving shelf orders to now-available ideal storage
+   - Invoke discard algorithm when no moves possible
 
-Progress: ~20% complete (scaffolding and infrastructure done, core logic missing)
+3. **Implement driver pickup simulation**
+   - Random delay between min-max interval
+   - Concurrent pickups using coroutines
+   - Track pickup actions
+
+4. **Integrate into Main.kt**
+   - Replace placeholder with full kitchen orchestration
+   - Process orders at configured rate
+   - Submit action ledger to server
+
+5. **Server validation**
+   - Run against challenge server
+   - Debug any issues
+   - Achieve consistent passing
+
+Progress: ~30% complete (infrastructure and storage foundation done, core orchestration pending)

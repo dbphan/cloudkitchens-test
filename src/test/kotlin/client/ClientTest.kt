@@ -34,7 +34,7 @@ class ClientTest {
                 )
         val ordersJson = Json.encodeToString(orders)
 
-        val mockEngine = MockEngine { request ->
+        val mockEngine = MockEngine { _ ->
             respond(
                     content = ByteReadChannel(ordersJson),
                     status = HttpStatusCode.OK,
@@ -145,7 +145,7 @@ class ClientTest {
     @Test
     fun `should throw exception on fetch problem error`() = runTest {
         // Arrange
-        val mockEngine = MockEngine { request ->
+        val mockEngine = MockEngine { _ ->
             respond(content = ByteReadChannel("Unauthorized"), status = HttpStatusCode.Unauthorized)
         }
 
@@ -167,7 +167,7 @@ class ClientTest {
     @Test
     fun `should throw exception on solve error`() = runTest {
         // Arrange
-        val mockEngine = MockEngine { request ->
+        val mockEngine = MockEngine { _ ->
             respond(content = ByteReadChannel("Bad Request"), status = HttpStatusCode.BadRequest)
         }
 

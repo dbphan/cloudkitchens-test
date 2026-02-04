@@ -167,14 +167,16 @@ com.css.challenge
 - Keep code **maintainable** and **testable**
 - Follow the existing architecture and patterns
 - **Always run tests** after making changes to verify correctness
-- Update **PROGRESS.md** checklist when completing major features
-- **Always review and update README.md** when adding new code, features, or architecture changes
+- **Update PROGRESS.md** immediately when completing objectives or making progress
+- **Update README.md** with every significant change (features, architecture, dependencies)
 
-## README Maintenance
+## Documentation Maintenance
 
-**CRITICAL**: The README.md must always reflect the current state of the project.
+**CRITICAL**: Keep documentation synchronized with code changes at all times.
 
-When to update README:
+### README.md Updates
+
+The README.md must always reflect the current state of the project. Update immediately when:
 
 - **New features added**: Document what it does and how to use it
 - **Architecture changes**: Update diagrams, package structure, or design patterns
@@ -189,6 +191,23 @@ Always ensure:
 - Feature list shows completed features with ✅ checkmarks
 - Architecture section matches actual package structure
 - Setup instructions work for new developers
+
+### PROGRESS.md Updates
+
+The PROGRESS.md must be updated as you work through objectives. Update immediately when:
+
+- **Starting a new objective**: Mark the objective and its tasks
+- **Completing a task**: Check off the completed item
+- **Making significant progress**: Update status notes
+- **Encountering blockers**: Document issues or dependencies
+- **Finishing an objective**: Mark complete and summarize outcome
+
+Always ensure:
+
+- Checked items (✅) reflect actual completed work
+- In-progress items are clearly marked
+- Blocked items include reasons and next steps
+- Progress percentage is updated regularly
 
 ## Git Workflow
 
