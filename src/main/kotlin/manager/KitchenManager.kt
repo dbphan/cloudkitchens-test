@@ -5,6 +5,10 @@ import com.css.challenge.model.StoredOrder
 import com.css.challenge.storage.Cooler
 import com.css.challenge.storage.Heater
 import com.css.challenge.storage.Shelf
+import kotlin.random.Random
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
 /**
@@ -200,6 +204,38 @@ class KitchenManager {
      * @return List of all actions performed
      */
     fun getActions(): List<Action> = actions.toList()
+
+    /**
+     * Schedules a driver pickup for an order after a random delay.
+     *
+     * The pickup is scheduled to occur within the specified min-max interval using a random delay.
+     * Uses coroutines for concurrent pickup simulation.
+     *
+     * @param orderId The ID of the order to pick up
+     * @param minPickupTime Minimum pickup time in seconds
+     * @param maxPickupTime Maximum pickup time in seconds
+     * @param scope The coroutine scope to launch the pickup task
+     */
+    fun scheduleDriverPickup(
+            orderId: String,
+            minPickupTime: Int,
+            maxPickupTime: Int,
+            scope: CoroutineScope
+    ) {
+        scope.launch {
+            // Calculate random delay in milliseconds
+            val delaySeconds = Random.nextInt(minPickupTime, maxPickupTime + 1)
+            val delayMillis = delaySeconds * 1000L
+
+            println("[DRIVER] Driver scheduled to pick up order $orderId in ${delaySeconds}s")
+
+            // Wait for the random delay
+            delay(delayMillis)
+
+            // Attempt to pick up the order
+            pickupOrder(orderId)
+        }
+    }
 
     /** Clears all storage and actions (for testing). */
     suspend fun clear() {

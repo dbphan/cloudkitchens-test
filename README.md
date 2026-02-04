@@ -8,8 +8,8 @@ A real-time food order fulfillment system for a delivery-only kitchen. Manages c
 - ✅ **Freshness tracking**: Orders decay at 1x at ideal temp, 2x at non-ideal temp
 - ✅ **Concurrent operations**: Multiple orders arriving and pickups simultaneously
 - ✅ **O(1) storage operations**: HashMap-based order lookup and retrieval
-- ⏳ **Sub-linear discard algorithm**: When shelf is full (in progress)
-- ⏳ **Driver pickup simulation**: Random timing within min-max interval (in progress)
+- ✅ **Sub-linear discard algorithm**: PriorityQueue for O(1) minimum value lookup
+- ✅ **Driver pickup simulation**: Random timing within min-max interval using coroutines
 - ⏳ **Server validation**: Consistent passing of challenge server tests (in progress)
 
 ## Architecture
@@ -31,7 +31,8 @@ com.css.challenge
 │   ├── Heater.kt            # Hot storage (6 capacity)
 │   └── Shelf.kt             # Room temp storage (12 capacity)
 ├── manager/        # Business logic
-│   └── KitchenManager.kt    # Order placement and pickup orchestration
+│   ├── KitchenManager.kt    # Order placement, pickup orchestration, driver scheduling
+│   └── DiscardStrategy.kt   # Sub-linear discard algorithm with priority queue
 └── Main.kt         # CLI entry point
 ```
 
@@ -47,10 +48,17 @@ com.css.challenge
 - HashMap for O(1) lookup by order ID
 - Properties: capacity, size, temperature, isEmpty(), isFull()
 
+**DiscardStrategy**: Sub-linear order discard algorithm
+- PriorityQueue (min-heap) for O(1) minimum value lookup
+- Value calculation: `(freshness × freshnessLimit) / ((orderAge + 1) × tempMultiplier)`
+- Automatically maintains lowest-value order for shelf overflow scenarios
+
 **KitchenManager**: Orchestrates order placement and pickup
 - Places orders at ideal temperature storage first, falls back to shelf
+- Handles shelf overflow by moving orders or discarding lowest-value order
+- Schedules driver pickups with random delays using coroutines
 - Validates freshness during pickup (discards expired orders)
-- Tracks all actions for server submission
+- Tracks all actions (place, move, discard, pickup) for server submission
 
 ## Technology Stack
 
@@ -140,9 +148,14 @@ open build/reports/tests/test/index.html
 
 ### Test Coverage
 
-**53 tests total** (100% passing):
+**72 tests total** (100% passing):
 - **StoredOrderTest** (10 tests): Freshness calculations, temperature matching, expiration
 - **StorageContainerTest** (13 tests): Cooler, Heater, Shelf capacity and operations
+- **KitchenManagerTest** (7 tests): Order placement logic and action tracking
+- **ClientTest** (6 tests): API client operations (fetch problem, submit ledger)
+- **DiscardStrategyTest** (12 tests): Priority queue discard algorithm, value calculations
+- **DriverPickupSimulationTest** (7 tests): Random pickup delays, concurrent operations
+- **Integration tests** (17 tests): Complete workflows including placement, storage, and pickup
 - **MainTest** (7 tests): CLI argument parsing and validation
 - **ClientTest** (4 tests): HTTP client and API communication
 - **OrderTest** (9 tests): Order serialization and validation

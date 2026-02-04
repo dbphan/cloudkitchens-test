@@ -42,7 +42,7 @@
 - [x] Remove orders quickly without moving others (O(1) HashMap removal)
 - [x] Check if order exists before removal
 - [x] Discard orders that exceeded freshness at pickup time
-- [ ] Simulate random pickup timing within configured interval
+- [x] Simulate random pickup timing within configured interval
 
 ## Execution Harness
 
@@ -64,7 +64,7 @@
 
 ### Execution Flow
 - [ ] Place orders one by one at configured rate
-- [ ] Schedule driver pickup for each order (random time in min-max interval)
+- [x] Schedule driver pickup for each order (random time in min-max interval)
 - [ ] Process all orders concurrently
 - [ ] Wait for all pickups to complete
 - [ ] Submit final action list to server
@@ -80,10 +80,10 @@
 - [x] Ensure atomic operations where needed
 - [x] Single-process, multi-threaded design (Kotlin coroutines)
 
-## Data Structures Algorithms
+## Data Structures & Algorithms
 
 - [x] Efficient storage data structure selection (HashMap for O(1) operations)
-- [ ] Sub-linear (better than O(n)) discard algorithm
+- [x] Sub-linear (better than O(n)) discard algorithm (PriorityQueue with O(1) peek)
 - [x] Fast order lookup by ID (O(1) HashMap)
 - [x] Efficient freshness calculation (real-time with timestamps)
 - [x] Optimal memory usage
