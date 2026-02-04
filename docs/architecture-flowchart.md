@@ -57,7 +57,7 @@ flowchart TD
     
     PickupOrder --> CheckFresh{Order Still<br/>Fresh?}
     
-    CheckFresh -->|Yes| RemoveOrder[Remove from Storage<br/>O[1] HashMap Lookup]
+    CheckFresh -->|Yes| RemoveOrder[Remove from Storage<br/>O-1 HashMap Lookup]
     CheckFresh -->|No| DiscardExpired[Discard Expired Order]
     
     RemoveOrder --> TrackPickup[Track Action: PICKUP]
@@ -243,7 +243,7 @@ flowchart TD
     FindOrder -->|No| LogNotFound[Log: Order not found]
     FindOrder -->|Yes| CheckFreshness{Freshness<br/>> 0?}
     
-    CheckFreshness -->|Yes| RemoveFromStorage[Remove from Storage<br/>O[1] HashMap]
+    CheckFreshness -->|Yes| RemoveFromStorage[Remove from Storage<br/>O-1 HashMap]
     CheckFreshness -->|No| DiscardExpired[Mark as Expired]
     
     RemoveFromStorage --> CheckShelf{Was on<br/>Shelf?}
@@ -281,19 +281,19 @@ flowchart TD
     TryMove -->|Yes| MoveToIdeal[Move Order<br/>Track MOVE Action]
     TryMove -->|No| UseDiscard[Use DiscardStrategy]
     
-    UseDiscard --> PeekLowest[O[1] PriorityQueue.peek<br/>Get Lowest Value Order]
+    UseDiscard --> PeekLowest[O-1 PriorityQueue.peek<br/>Get Lowest Value Order]
     
     PeekLowest --> CalcValue[Value Formula:<br/>freshness × freshnessLimit /<br/> orderAge+1 × tempMultiplier]
     
-    CalcValue --> PollLowest[O[log n] PriorityQueue.poll<br/>Remove Lowest Value]
+    CalcValue --> PollLowest[O-log-n PriorityQueue.poll<br/>Remove Lowest Value]
     
-    PollLowest --> RemoveFromShelf[Remove from Shelf HashMap<br/>O[1] Lookup]
+    PollLowest --> RemoveFromShelf[Remove from Shelf HashMap<br/>O-1 Lookup]
     
     RemoveFromShelf --> TrackDiscard[Track Action: DISCARD]
     
     TrackDiscard --> PlaceNew[Place New Order on Shelf]
     
-    PlaceNew --> AddToDiscard[Add to DiscardStrategy<br/>O[log n] Insert]
+    PlaceNew --> AddToDiscard[Add to DiscardStrategy<br/>O-log-n Insert]
     
     MoveToIdeal --> PlaceNew
 
