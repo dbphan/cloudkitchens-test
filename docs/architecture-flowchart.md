@@ -46,26 +46,31 @@ flowchart TD
     MoveOrder --> TrackPlace
     DiscardLowest --> TrackDiscard[Track Action: DISCARD]
     
-    TrackPlace --> SchedulePickup[Schedule Driver Pickup<br/>Random delay min-max]
-    TrackDiscard --> SchedulePickup
+    TrackPlace --> SchedulePickup[scheduleDriverPickup<br/>Launch Coroutine]
+    TrackDiscard --> NextOrder
     
-    SchedulePickup --> WaitPickup[Coroutine Delay]
+    SchedulePickup --> CalcDelay[Random Delay<br/>Random.nextInt min-max seconds]
     
-    WaitPickup --> PickupOrder[KitchenManager.pickupOrder]
+    CalcDelay --> WaitPickup[Coroutine delay<br/>Non-blocking wait]
+    
+    WaitPickup --> PickupOrder[KitchenManager.pickupOrder<br/>Mutex-protected]
     
     PickupOrder --> CheckFresh{Order Still<br/>Fresh?}
     
-    CheckFresh -->|Yes| RemoveOrder[Remove from Storage<br/>O1 HashMap Lookup]
+    CheckFresh -->|Yes| RemoveOrder[Remove from Storage<br/>O(1) HashMap Lookup]
     CheckFresh -->|No| DiscardExpired[Discard Expired Order]
     
     RemoveOrder --> TrackPickup[Track Action: PICKUP]
     DiscardExpired --> TrackDiscardExpired[Track Action: DISCARD]
     
-    TrackPickup --> MoreOrders{More<br/>Orders?}
-    TrackDiscardExpired --> MoreOrders
+    TrackPlace --> NextOrder{More<br/>Orders?}
+    TrackPickup --> ConcurrentWait[Concurrent Pickups<br/>Running in Background]
+    TrackDiscardExpired --> ConcurrentWait
     
-    MoreOrders -->|Yes| ProcessLoop
-    MoreOrders -->|No| WaitAll[Wait for All Pickups]
+    NextOrder -->|Yes| ProcessLoop
+    NextOrder -->|No| WaitAll[Wait for All Pickups<br/>Join Coroutines]
+    
+    ConcurrentWait --> WaitAll
     
     WaitAll --> SubmitActions[Client.solve<br/>Submit Action Ledger]
     
@@ -101,6 +106,7 @@ flowchart LR
     
     subgraph Manager["Kitchen Manager"]
         KM[KitchenManager]
+        DS[DiscardStrategy<br/>PriorityQueue]
         ActionList[Actions List]
     end
     
@@ -121,6 +127,9 @@ flowchart LR
     KM --> Cooler
     KM --> Heater
     KM --> Shelf
+    KM --> DS
+    
+    DS --> Shelf
     
     KM --> ActionList
     ActionList --> Action
@@ -200,6 +209,104 @@ flowchart TD
         PickupN --> MutexS2[Mutex Lock<br/>Remove from Shelf]
     end
     
+    MutexC2 --> Complete1[Pickup Complete]
+    MutexH2 --> Complete2[Pickup Complete]
+    MutexS2 --> CompleteN[Pickup Complete]
+
+    style MainCoroutine fill:#4A90E2
+    style MutexC1 fill:#50E3C2
+    style MutexH1 fill:#FF6B6B
+    style MutexS1 fill:#B8E986
+    style Complete1 fill:#90EE90
+    style Complete2 fill:#90EE90
+    style CompleteN fill:#90EE90
+```
+
+## Driver Pickup Simulation Flow
+
+```mermaid
+flowchart TD
+    OrderPlaced[Order Successfully Placed] --> Schedule[scheduleDriverPickup Called]
+    
+    Schedule --> LaunchCoroutine[scope.launch<br/>Non-blocking Coroutine]
+    
+    LaunchCoroutine --> RandomDelay[Calculate Random Delay<br/>Random.nextInt min, max+1]
+    
+    RandomDelay --> LogSchedule[Log: Driver scheduled<br/>to pick up in Xs]
+    
+    LogSchedule --> Delay[delay delayMillis<br/>Suspend coroutine]
+    
+    Delay --> AcquireMutex[Acquire Storage Mutex]
+    
+    AcquireMutex --> FindOrder{Order<br/>Found?}
+    
+    FindOrder -->|No| LogNotFound[Log: Order not found]
+    FindOrder -->|Yes| CheckFreshness{Freshness<br/>> 0?}
+    
+    CheckFreshness -->|Yes| RemoveFromStorage[Remove from Storage<br/>O 1 HashMap]
+    CheckFreshness -->|No| DiscardExpired[Mark as Expired]
+    
+    RemoveFromStorage --> CheckShelf{Was on<br/>Shelf?}
+    
+    CheckShelf -->|Yes| RemoveFromDiscard[Remove from DiscardStrategy]
+    CheckShelf -->|No| LogPickup[Log: Order picked up]
+    
+    RemoveFromDiscard --> LogPickup
+    
+    LogPickup --> TrackAction[Track Action: PICKUP<br/>with timestamp]
+    
+    DiscardExpired --> LogDiscard[Log: Order expired]
+    LogDiscard --> TrackDiscardAction[Track Action: DISCARD]
+    
+    TrackAction --> ReleaseMutex[Release Mutex]
+    TrackDiscardAction --> ReleaseMutex
+    LogNotFound --> ReleaseMutex
+    
+    ReleaseMutex --> CoroutineComplete[Coroutine Completes]
+
+    style OrderPlaced fill:#90EE90
+    style LaunchCoroutine fill:#4A90E2
+    style Delay fill:#87CEEB
+    style TrackAction fill:#B8E986
+    style CoroutineComplete fill:#90EE90
+    style DiscardExpired fill:#FFB6C1
+```
+
+## Sub-Linear Discard Algorithm
+
+```mermaid
+flowchart TD
+    ShelfFull[Shelf at Capacity 12] --> TryMove{Can Move<br/>Order to Ideal?}
+    
+    TryMove -->|Yes| MoveToIdeal[Move Order<br/>Track MOVE Action]
+    TryMove -->|No| UseDiscard[Use DiscardStrategy]
+    
+    UseDiscard --> PeekLowest[O 1 PriorityQueue.peek<br/>Get Lowest Value Order]
+    
+    PeekLowest --> CalcValue[Value Formula:<br/>freshness × freshnessLimit /<br/> orderAge+1 × tempMultiplier]
+    
+    CalcValue --> PollLowest[O log n PriorityQueue.poll<br/>Remove Lowest Value]
+    
+    PollLowest --> RemoveFromShelf[Remove from Shelf HashMap<br/>O 1 Lookup]
+    
+    RemoveFromShelf --> TrackDiscard[Track Action: DISCARD]
+    
+    TrackDiscard --> PlaceNew[Place New Order on Shelf]
+    
+    PlaceNew --> AddToDiscard[Add to DiscardStrategy<br/>O log n Insert]
+    
+    MoveToIdeal --> PlaceNew
+
+    style ShelfFull fill:#FFD700
+    style PeekLowest fill:#4A90E2
+    style CalcValue fill:#87CEEB
+    style TrackDiscard fill:#FFB6C1
+    style PlaceNew fill:#90EE90
+```
+
+## Thread Safety & Synchronization
+    end
+    
     subgraph Synchronization
         MutexC2 --> Wait[WaitAll<br/>All Pickups Complete]
         MutexH2 --> Wait
@@ -223,6 +330,7 @@ flowchart TD
 - All storage containers use **Mutex.withLock** for atomic operations
 - Suspend functions enable concurrent access without blocking threads
 - HashMap provides O(1) order lookup by ID
+- Coroutines for non-blocking concurrent pickup simulation
 
 ### Freshness Tracking
 - Real-time calculation using `kotlinx-datetime.Instant`
@@ -235,7 +343,17 @@ flowchart TD
 3. If shelf full: attempt to move shelf order to now-available ideal storage
 4. If no moves possible: discard order with lowest value using sub-linear algorithm
 
-### Discard Algorithm (Planned)
-- Priority queue (heap) sorted by order value
-- O(log n) insertion, O(1) minimum retrieval
-- Value = `(freshness × shelfLife × decayModifier) / (orderAge × tempMultiplier)`
+### Discard Algorithm ✅
+- **PriorityQueue** (min-heap) sorted by order value
+- **O(log n)** insertion, **O(1)** minimum value peek
+- **O(log n)** removal of lowest value order
+- Value = `(freshness × freshnessLimit) / ((orderAge + 1) × tempMultiplier)`
+- Maintains lowest-value order automatically for shelf overflow
+
+### Driver Pickup Simulation ✅
+- **Random delay** between min and max seconds using `Random.nextInt()`
+- **Coroutine-based**: Each pickup runs in independent coroutine
+- **Non-blocking**: Uses `delay()` instead of `Thread.sleep()`
+- **Concurrent execution**: Multiple pickups can happen simultaneously
+- **Thread-safe**: Uses existing Mutex-protected `pickupOrder()` method
+- **Action tracking**: Automatically logs PICKUP or DISCARD actions
