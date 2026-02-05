@@ -12,13 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
-/**
- * Service for managing kitchen operations including order placement, storage, and removal.
- *
- * Coordinates between different storage containers (cooler, heater, shelf) and implements placement
- * logic according to temperature requirements. Uses a sub-linear discard algorithm when shelf is
- * full.
- */
+/** Manages kitchen order placement, storage, and pickup operations. */
 class KitchenService {
     private val cooler = Cooler()
     private val heater = Heater()
@@ -28,18 +22,7 @@ class KitchenService {
 
     private val actions = mutableListOf<Action>()
 
-    /**
-     * Places an order in the appropriate storage location.
-     *
-     * Placement logic:
-     * 1. Try ideal temperature storage first
-     * 2. If full, use shelf
-     * 3. If shelf full, attempt to move existing shelf order to ideal storage
-     * 4. If no move possible, discard an order from shelf
-     *
-     * @param order The order to place
-     * @return true if successfully placed, false otherwise
-     */
+    /** Places an order using ideal storage first, falling back to shelf if needed. */
     suspend fun placeOrder(order: com.css.challenge.client.Order): Boolean {
         val timestamp = Clock.System.now()
 
@@ -84,21 +67,7 @@ class KitchenService {
         return false
     }
 
-    /**
-     * Handles shelf overflow when both ideal storage and shelf are full.
-     *
-     * Strategy:
-     * 1. Try to move a shelf order to its ideal storage if space becomes available
-     * 2. If no moves possible, discard the order with lowest value from shelf
-     * 3. Place the new order in the freed space
-     *
-     * @param newOrder The original order to place
-     * @param newStoredOrder The stored order wrapper
-     * @param idealStorage The ideal storage for the new order
-     * @param idealLocation The location name of ideal storage
-     * @param timestamp Current timestamp
-     * @return true if overflow was handled and order was placed
-     */
+    /** Handles shelf overflow by moving or discarding existing orders. */
     private suspend fun handleShelfOverflow(
             newOrder: Order,
             newStoredOrder: StoredOrder,
@@ -106,7 +75,7 @@ class KitchenService {
             idealLocation: String,
             timestamp: kotlinx.datetime.Instant
     ): Boolean {
-        // Try to move a shelf order to cooler or heater if space available
+        // See if we can shuffle things around to make room
         val shelfOrders = shelf.getAll()
         for (shelfOrder in shelfOrders) {
             val moveTarget =
@@ -160,15 +129,7 @@ class KitchenService {
         return false
     }
 
-    /**
-     * Picks up an order by its ID.
-     *
-     * Searches all storage locations and removes the order if found. If the order has expired, it
-     * is discarded instead of picked up.
-     *
-     * @param orderId The ID of the order to pick up
-     * @return true if order was picked up, false if not found or expired
-     */
+    /** Picks up an order if it exists and hasn't expired. */
     suspend fun pickupOrder(orderId: String): Boolean {
         val timestamp = Clock.System.now()
 
@@ -199,24 +160,9 @@ class KitchenService {
         return true
     }
 
-    /**
-     * Gets all captured actions.
-     *
-     * @return List of all actions performed
-     */
     fun getActions(): List<Action> = actions.toList()
 
-    /**
-     * Schedules a driver pickup for an order after a random delay.
-     *
-     * The pickup is scheduled to occur within the specified min-max interval using a random delay.
-     * Uses coroutines for concurrent pickup simulation.
-     *
-     * @param orderId The ID of the order to pick up
-     * @param minPickupTime Minimum pickup time in seconds
-     * @param maxPickupTime Maximum pickup time in seconds
-     * @param scope The coroutine scope to launch the pickup task
-     */
+    /** Schedules a driver to pick up an order after a random delay between min and max. */
     fun scheduleDriverPickup(
             orderId: String,
             minPickupTime: Int,
@@ -230,7 +176,7 @@ class KitchenService {
 
             println("[DRIVER] Driver scheduled to pick up order $orderId in ${delaySeconds}s")
 
-            // Wait for the random delay
+            // Driver's on their way...
             delay(delayMillis)
 
             // Attempt to pick up the order

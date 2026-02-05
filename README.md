@@ -80,176 +80,69 @@ If Java 21 or later is installed locally, run the program directly:
 
 ## Discard Criteria
 
-### Algorithm: Priority Queue (Min-Heap) with Value-Based Selection
+When the shelf is full and we can't move anything to ideal storage, we need to discard something. The system picks the order with the **lowest value**.
 
-When the overflow shelf is full and no existing shelf orders can be moved to their ideal storage, the system discards the order with the **lowest calculated value**.
+### How it works
 
-### Value Calculation Formula
+The value formula looks at a few things:
 
 ```kotlin
 value = (freshness × shelfLife) / (orderAge × temperatureMultiplier)
 ```
 
-**Where:**
-- `freshness`: Current freshness ratio (0.0 to 1.0)
-- `shelfLife`: Maximum shelf life in seconds
-- `orderAge`: Time elapsed since placement (seconds + 1 to avoid division by zero)
-- `temperatureMultiplier`: 1.0 at ideal temperature, 2.0 at non-ideal temperature
+- Fresh orders with long shelf life → higher value (keep these)
+- Old orders or wrong temperature → lower value (discard these)
+- Temperature multiplier is 2x if stored in the wrong place
 
-### Rationale
+I'm using a priority queue (min-heap) to track this, which means finding the lowest value is fast - O(log n) instead of scanning everything.
 
-**Why this approach:**
+### Example
 
-1. **Sub-linear Time Complexity**: Uses a PriorityQueue (min-heap) for O(log n) insertion and O(1) minimum value lookup, meeting the "better than O(n)" requirement.
+If the shelf has:
+- Fresh pizza (90% fresh, 5 min old, wrong temp) → value ~9
+- Aging salad (40% fresh, 10 min old, right temp) → value ~2.4
+- Old burger (20% fresh, 15 min old, wrong temp) → value ~0.67
 
-2. **Balances Multiple Factors**: The formula considers:
-   - **Freshness**: Lower freshness = lower value (more likely to discard)
-   - **Shelf Life**: Orders with longer shelf life have higher value (keep longer-lasting items)
-   - **Age**: Older orders have lower value (prefer discarding old items)
-   - **Temperature Mismatch**: Orders at non-ideal temperature decay faster, lowering their value
-
-3. **Fair and Predictable**: Orders that are:
-   - Nearly expired (low freshness)
-   - Stored at wrong temperature (high multiplier)
-   - Already old (high age)
-   - Have short shelf life
-   
-   ...will naturally have the lowest value and be discarded first.
-
-4. **Automatic Prioritization**: The PriorityQueue automatically maintains the order, so we always know which order has the lowest value without scanning all orders.
-
-### Implementation
-
-```kotlin
-class DiscardStrategy {
-    private val orderQueue = PriorityQueue<StoredOrder>(
-        compareBy { calculateValue(it) }
-    )
-    
-    private fun calculateValue(order: StoredOrder): Double {
-        val freshness = order.freshness()
-        val age = order.age().inWholeSeconds + 1
-        val tempMultiplier = order.temperatureMultiplier()
-        val shelfLife = order.order.shelfLife.toDouble()
-        
-        return (freshness * shelfLife) / (age * tempMultiplier)
-    }
-    
-    fun pollLowestValueOrder(): StoredOrder? = orderQueue.poll()
-}
-```
-
-### Performance Characteristics
-
-- **Add Order**: O(log n) - heap insertion
-- **Get Lowest Value**: O(log n) - poll from heap
-- **Remove by ID**: O(n) - requires linear search (acceptable for rare operation)
-
-### Example Scenario
-
-If the shelf contains:
-1. Fresh pizza (90% fresh, 5 min old, wrong temp) → value ≈ 9.0
-2. Aging salad (40% fresh, 10 min old, correct temp) → value ≈ 2.4
-3. Old burger (20% fresh, 15 min old, wrong temp) → value ≈ 0.67
-
-**Result**: The old burger (#3) would be discarded first due to its lowest value.
+The old burger gets tossed first.
 
 ## Architecture
 
-### Storage System
-- **Cooler**: 6 cold orders at ideal temperature
-- **Heater**: 6 hot orders at ideal temperature  
-- **Shelf**: 12 orders at room temperature (overflow storage)
+The storage system has three containers:
+- **Cooler**: 6 cold orders
+- **Heater**: 6 hot orders
+- **Shelf**: 12 orders (overflow storage)
 
-### Concurrency
-- **Thread-safe**: All storage operations protected by Mutex
-- **Coroutines**: Driver pickups run concurrently with random delays
-- **Structured Concurrency**: All operations properly scoped and cleaned up
+All storage operations are thread-safe with Mutex locks. Driver pickups run concurrently using coroutines with random delays.
 
-### Placement Strategy
-1. Try ideal temperature storage first (cooler/heater)
-2. Fall back to shelf if ideal is full
-3. If shelf is also full:
-   - Try moving a shelf order to its ideal storage
-   - If no moves possible, discard lowest-value order using PriorityQueue
-   - Place new order in freed space
+**Placement logic:**
+1. Try ideal temperature storage first
+2. Fall back to shelf if full
+3. If shelf is also full, try moving a shelf order to its ideal spot
+4. If that doesn't work, discard the lowest-value order
+5. Place new order in the freed space
 
 ### Project Structure
 
-The project follows a typical layered architecture:
-
 ```
 src/main/kotlin/
-├── client/          API client for CloudKitchens service
-├── service/         Business logic (KitchenService)
-├── strategy/        Algorithms (DiscardStrategy)
-├── repository/      Storage layer (Cooler, Heater, Shelf)
-└── model/           Domain models (StoredOrder)
+├── client/          API client
+├── service/         Business logic
+├── strategy/        Discard algorithm
+├── repository/      Storage containers
+└── model/           Domain models
 ```
 
-### Technology Stack
-- **Kotlin** 2.0.21 with coroutines
-- **Java** 21
-- **Gradle** 8.4
-- **Ktor** 3.0.1 (HTTP client)
-- **Clikt** 5.0.1 (CLI framework)
+**Tech stack:** Kotlin 2.0.21, Java 21, Gradle 8.4, Ktor 3.0.1, Clikt 5.0.1
 
 ## Testing
 
-### Test Organization
+**95 tests total** - 72 unit tests + 23 integration tests
 
-The project includes comprehensive test coverage with **95 tests** organized into two categories:
-
-- **Unit Tests** (72 tests): Located in `src/test/kotlin/`
-  - Test individual components in isolation
-  - Use Gherkin-style (Given-When-Then) descriptions for clarity
-  
-- **Integration Tests** (23 tests): Located in `src/integrationTest/kotlin/`
-  - Test complete workflows and system interactions
-  - Cover both success scenarios and failure cases
-
-### Running Tests
-
+Run them with:
 ```bash
-# Run unit tests only
-./gradlew test
-
-# Run integration tests only
-./gradlew integrationTest
-
-# Run all tests
-./gradlew test integrationTest
+./gradlew test                    # unit tests
+./gradlew integrationTest         # integration tests
+./gradlew test integrationTest    # all tests
 ```
 
-### Test Coverage
-
-**Unit Tests** cover:
-- Command-line parsing and validation
-- Order lifecycle and freshness calculations
-- Client API interactions and error handling
-- Storage container operations
-- Discard strategy value calculations
-- Driver pickup simulation
-- Kitchen manager coordination
-
-**Integration Tests** cover:
-- Complete order placement and pickup workflows
-- Capacity management and overflow handling
-- Concurrent operations and race conditions
-- API authentication and network failures
-- Malformed responses and serialization errors
-- Zero capacity edge cases
-- Temperature-specific storage constraints
-
-### Test Style
-
-All tests follow **Gherkin BDD** naming conventions for improved readability:
-
-```kotlin
-@Test
-fun `Given valid command-line options, When the application parses them, Then it should accept all options without errors`() {
-    // Test implementation
-}
-```
-
-This approach makes test intent immediately clear and serves as living documentation of system behavior.
+Unit tests cover individual components. Integration tests verify full workflows including concurrency, API interactions, and edge cases like capacity limits.
