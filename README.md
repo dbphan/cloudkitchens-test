@@ -4,6 +4,35 @@ Author: Bao Phan
 
 ## How to run
 
+### Environment Setup
+
+The application requires an authentication token to access the CloudKitchens API. You can provide this in two ways:
+
+**Option 1: Environment File (Recommended for local development)**
+
+Create a `.env` file in the project root:
+
+```bash
+# .env file
+AUTH_TOKEN=your_token_here
+ENDPOINT=https://api.cloudkitchens.com  # Optional, this is the default
+```
+
+Then run the application:
+
+```bash
+# Load environment variables and run
+set -a && source .env && set +a && ./gradlew run
+```
+
+**Option 2: Command Line Arguments**
+
+Pass the token directly via command line:
+
+```bash
+./gradlew run --args="--auth=<token>"
+```
+
 ### Using Docker (Recommended)
 
 The `Dockerfile` defines a self-contained Java/Gradle reference environment.
@@ -144,6 +173,19 @@ If the shelf contains:
    - Try moving a shelf order to its ideal storage
    - If no moves possible, discard lowest-value order using PriorityQueue
    - Place new order in freed space
+
+### Project Structure
+
+The project follows a typical layered architecture:
+
+```
+src/main/kotlin/
+├── client/          API client for CloudKitchens service
+├── service/         Business logic (KitchenService)
+├── strategy/        Algorithms (DiscardStrategy)
+├── repository/      Storage layer (Cooler, Heater, Shelf)
+└── model/           Domain models (StoredOrder)
+```
 
 ### Technology Stack
 - **Kotlin** 2.0.21 with coroutines
