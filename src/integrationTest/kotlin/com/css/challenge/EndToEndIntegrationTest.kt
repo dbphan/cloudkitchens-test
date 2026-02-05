@@ -1,7 +1,7 @@
 package com.css.challenge
 
 import com.css.challenge.client.Client
-import com.css.challenge.manager.KitchenManager
+import com.css.challenge.service.KitchenService
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.engine.mock.*
@@ -36,7 +36,7 @@ class EndToEndIntegrationTest {
                 val httpClient = HttpClient(CIO) { install(ContentNegotiation) { json() } }
 
                 val client = Client(httpClient, authToken, endpoint)
-                val manager = KitchenManager()
+                val manager = KitchenService()
 
                 try {
                     // Act - Fetch problem
@@ -98,7 +98,7 @@ class EndToEndIntegrationTest {
                 val httpClient = HttpClient(CIO) { install(ContentNegotiation) { json() } }
 
                 val client = Client(httpClient, authToken, endpoint)
-                val manager = KitchenManager()
+                val manager = KitchenService()
                 val seed = 99999L
 
                 try {
@@ -325,7 +325,7 @@ class EndToEndIntegrationTest {
 
                 val httpClient = HttpClient(mockEngine) { install(ContentNegotiation) { json() } }
                 val client = Client(httpClient, authToken, endpoint)
-                val manager = KitchenManager()
+                val manager = KitchenService()
 
                 // Create valid actions
                 manager.placeOrder(com.css.challenge.client.Order("test", "Pizza", "hot", 10, 300))

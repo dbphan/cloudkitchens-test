@@ -1,17 +1,17 @@
-package com.css.challenge.storage
+package com.css.challenge.repository
 
 import com.css.challenge.model.StoredOrder
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Thread-safe storage container for hot orders.
+ * Thread-safe storage container for cold orders.
  *
- * Maintains hot temperature and holds up to 6 orders.
+ * Maintains cold temperature and holds up to 6 orders.
  */
-class Heater : StorageContainer {
+class Cooler : StorageContainer {
     override val capacity: Int = 6
-    override val temperature: String = "hot"
+    override val temperature: String = "cold"
 
     private val mutex = Mutex()
     private val orders = mutableMapOf<String, StoredOrder>()

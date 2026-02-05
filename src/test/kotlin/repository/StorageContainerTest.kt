@@ -1,4 +1,4 @@
-package com.css.challenge.storage
+package com.css.challenge.repository
 
 import com.css.challenge.client.Order
 import com.css.challenge.model.StoredOrder

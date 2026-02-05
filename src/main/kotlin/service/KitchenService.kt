@@ -1,10 +1,11 @@
-package com.css.challenge.manager
+package com.css.challenge.service
 
 import com.css.challenge.client.*
 import com.css.challenge.model.StoredOrder
-import com.css.challenge.storage.Cooler
-import com.css.challenge.storage.Heater
-import com.css.challenge.storage.Shelf
+import com.css.challenge.repository.Cooler
+import com.css.challenge.repository.Heater
+import com.css.challenge.repository.Shelf
+import com.css.challenge.strategy.DiscardStrategy
 import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -12,13 +13,13 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
 /**
- * Manages kitchen operations including order placement, storage, and removal.
+ * Service for managing kitchen operations including order placement, storage, and removal.
  *
  * Coordinates between different storage containers (cooler, heater, shelf) and implements placement
  * logic according to temperature requirements. Uses a sub-linear discard algorithm when shelf is
  * full.
  */
-class KitchenManager {
+class KitchenService {
     private val cooler = Cooler()
     private val heater = Heater()
     private val shelf = Shelf()
@@ -34,7 +35,7 @@ class KitchenManager {
      * 1. Try ideal temperature storage first
      * 2. If full, use shelf
      * 3. If shelf full, attempt to move existing shelf order to ideal storage
-     * 4. If no move possible, discard an order from shelf (TODO: implement)
+     * 4. If no move possible, discard an order from shelf
      *
      * @param order The order to place
      * @return true if successfully placed, false otherwise
@@ -101,7 +102,7 @@ class KitchenManager {
     private suspend fun handleShelfOverflow(
             newOrder: Order,
             newStoredOrder: StoredOrder,
-            idealStorage: com.css.challenge.storage.StorageContainer,
+            idealStorage: com.css.challenge.repository.StorageContainer,
             idealLocation: String,
             timestamp: kotlinx.datetime.Instant
     ): Boolean {

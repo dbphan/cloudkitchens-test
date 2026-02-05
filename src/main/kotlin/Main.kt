@@ -1,7 +1,7 @@
 package com.css.challenge
 
 import com.css.challenge.client.Client
-import com.css.challenge.manager.KitchenManager
+import com.css.challenge.service.KitchenService
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.options.*
@@ -52,7 +52,7 @@ class Main : CliktCommand() {
             println("Pickup Time: $min - $max")
             println("========================================\n")
 
-            val kitchen = KitchenManager()
+            val kitchen = KitchenService()
 
             // Process orders at configured rate
             for ((index, order) in problem.orders.withIndex()) {

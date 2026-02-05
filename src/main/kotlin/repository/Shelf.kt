@@ -1,17 +1,18 @@
-package com.css.challenge.storage
+package com.css.challenge.repository
 
 import com.css.challenge.model.StoredOrder
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Thread-safe storage container for cold orders.
+ * Thread-safe storage container for room temperature orders.
  *
- * Maintains cold temperature and holds up to 6 orders.
+ * Maintains room temperature and holds up to 12 orders. Acts as overflow storage when cooler or
+ * heater are full.
  */
-class Cooler : StorageContainer {
-    override val capacity: Int = 6
-    override val temperature: String = "cold"
+class Shelf : StorageContainer {
+    override val capacity: Int = 12
+    override val temperature: String = "room"
 
     private val mutex = Mutex()
     private val orders = mutableMapOf<String, StoredOrder>()

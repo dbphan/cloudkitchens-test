@@ -1,7 +1,7 @@
 package com.css.challenge
 
 import com.css.challenge.client.Order
-import com.css.challenge.manager.KitchenManager
+import com.css.challenge.service.KitchenService
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class KitchenIntegrationTest {
 
-    private val manager = KitchenManager()
+    private val manager = KitchenService()
 
     @AfterEach fun cleanup() = runTest { manager.clear() }
 
