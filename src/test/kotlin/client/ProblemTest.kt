@@ -11,9 +11,12 @@ import org.junit.jupiter.api.Test
  */
 class ProblemTest {
 
-    /** Tests creating a problem with orders. */
+    /**
+     * Given a test ID and order list, When creating a problem, Then it should have correct test ID
+     * and orders.
+     */
     @Test
-    fun `should create problem with test ID and orders`() {
+    fun `Given a test ID and order list, When creating a problem, Then it should have correct test ID and orders`() {
         // Arrange
         val testId = "test-123"
         val orders =
@@ -32,9 +35,9 @@ class ProblemTest {
         assertEquals("order-2", problem.orders[1].id)
     }
 
-    /** Tests creating a problem with empty order list. */
+    /** Given an empty order list, When creating a problem, Then it should have zero orders. */
     @Test
-    fun `should create problem with empty order list`() {
+    fun `Given an empty order list, When creating a problem, Then it should have zero orders`() {
         // Arrange
         val testId = "test-456"
         val orders = emptyList<Order>()
@@ -47,9 +50,9 @@ class ProblemTest {
         assertTrue(problem.orders.isEmpty())
     }
 
-    /** Tests creating a problem with single order. */
+    /** Given a single order, When creating a problem, Then it should have exactly one order. */
     @Test
-    fun `should create problem with single order`() {
+    fun `Given a single order, When creating a problem, Then it should have exactly one order`() {
         // Arrange
         val testId = "test-789"
         val order = Order("order-1", "Pizza", "hot", 20, 450)
@@ -63,9 +66,12 @@ class ProblemTest {
         assertEquals("Pizza", problem.orders[0].name)
     }
 
-    /** Tests creating a problem with multiple orders of different temperatures. */
+    /**
+     * Given orders with different temperatures, When creating a problem, Then it should preserve
+     * all temperature specifications.
+     */
     @Test
-    fun `should create problem with mixed temperature orders`() {
+    fun `Given orders with different temperatures, When creating a problem, Then it should preserve all temperature specifications`() {
         // Arrange
         val testId = "test-mixed"
         val orders =
@@ -85,9 +91,11 @@ class ProblemTest {
         assertEquals("cold", problem.orders[2].temp)
     }
 
-    /** Tests problem properties are immutable (data class behavior). */
+    /**
+     * Given a problem instance, When copying it, Then the copy should have identical properties.
+     */
     @Test
-    fun `should have immutable properties`() {
+    fun `Given a problem instance, When copying it, Then the copy should have identical properties`() {
         // Arrange
         val testId = "test-999"
         val orders = listOf(Order("order-1", "Burger", "hot", 15, 300))
@@ -101,9 +109,12 @@ class ProblemTest {
         assertEquals(problem1.orders, problem2.orders)
     }
 
-    /** Tests problem with large number of orders. */
+    /**
+     * Given 100 orders, When creating a problem, Then it should contain all orders with correct
+     * IDs.
+     */
     @Test
-    fun `should handle large number of orders`() {
+    fun `Given 100 orders, When creating a problem, Then it should contain all orders with correct IDs`() {
         // Arrange
         val testId = "test-large"
         val orders = (1..100).map { i -> Order("order-$i", "Item $i", "hot", i * 10, i * 30) }

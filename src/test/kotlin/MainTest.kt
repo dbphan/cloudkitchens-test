@@ -11,9 +11,12 @@ import org.junit.jupiter.api.Test
  */
 class MainTest {
 
-    /** Tests that the application can run with auth token from environment or CLI. */
+    /**
+     * Given the application with auth configuration, When run with auth token from environment or
+     * CLI, Then it should accept the authentication.
+     */
     @Test
-    fun `should accept auth token from environment or CLI`() {
+    fun `Given the application with auth configuration, When run with auth token from environment or CLI, Then it should accept the authentication`() {
         // Arrange
         val main = Main()
 
@@ -28,9 +31,12 @@ class MainTest {
         )
     }
 
-    /** Tests that the application accepts valid command-line options. */
+    /**
+     * Given valid command-line options, When the application parses them, Then it should accept all
+     * options without errors.
+     */
     @Test
-    fun `should parse valid options`() {
+    fun `Given valid command-line options, When the application parses them, Then it should accept all options without errors`() {
         // Arrange
         val main = Main()
 
@@ -46,9 +52,12 @@ class MainTest {
         )
     }
 
-    /** Tests default values for optional parameters. */
+    /**
+     * Given the application without explicit endpoint, When running with auth token only, Then it
+     * should use the default endpoint.
+     */
     @Test
-    fun `should use default endpoint when not specified`() {
+    fun `Given the application without explicit endpoint, When running with auth token only, Then it should use the default endpoint`() {
         // Arrange
         val main = Main()
 
@@ -63,9 +72,12 @@ class MainTest {
         )
     }
 
-    /** Tests that duration parameters can be parsed. */
+    /**
+     * Given duration parameters in the command line, When the application parses them, Then it
+     * should correctly interpret all duration values.
+     */
     @Test
-    fun `should parse duration parameters`() {
+    fun `Given duration parameters in the command line, When the application parses them, Then it should correctly interpret all duration values`() {
         // Arrange
         val main = Main()
 
@@ -79,9 +91,12 @@ class MainTest {
         )
     }
 
-    /** Tests that seed parameter accepts numeric values. */
+    /**
+     * Given a numeric seed parameter, When passed to the application, Then it should accept the
+     * seed value.
+     */
     @Test
-    fun `should accept seed parameter`() {
+    fun `Given a numeric seed parameter, When passed to the application, Then it should accept the seed value`() {
         // Arrange
         val main = Main()
 

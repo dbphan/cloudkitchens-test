@@ -13,9 +13,12 @@ import org.junit.jupiter.api.Test
  */
 class OrderTest {
 
-    /** Tests creating an order with all properties. */
+    /**
+     * Given all order properties, When creating an order, Then it should have all properties
+     * correctly assigned.
+     */
     @Test
-    fun `should create order with all properties`() {
+    fun `Given all order properties, When creating an order, Then it should have all properties correctly assigned`() {
         // Arrange & Act
         val order =
                 Order(id = "order-123", name = "Burger", temp = "hot", price = 15, freshness = 300)
@@ -28,9 +31,12 @@ class OrderTest {
         assertEquals(300, order.freshness)
     }
 
-    /** Tests creating an order with default price. */
+    /**
+     * Given an order without price specified, When creating the order, Then it should use the
+     * default price of 0.
+     */
     @Test
-    fun `should use default price when not specified`() {
+    fun `Given an order without price specified, When creating the order, Then it should use the default price of 0`() {
         // Arrange & Act
         val order = Order(id = "order-456", name = "Salad", temp = "cold", freshness = 600)
 
@@ -38,9 +44,12 @@ class OrderTest {
         assertEquals(0, order.price)
     }
 
-    /** Tests serialization of order to JSON. */
+    /**
+     * Given an order object, When serializing to JSON, Then it should contain all order properties
+     * in JSON format.
+     */
     @Test
-    fun `should serialize order to JSON`() {
+    fun `Given an order object, When serializing to JSON, Then it should contain all order properties in JSON format`() {
         // Arrange
         val order =
                 Order(
@@ -63,9 +72,12 @@ class OrderTest {
         assert(json.contains("\"freshness\":120"))
     }
 
-    /** Tests deserialization of order from JSON. */
+    /**
+     * Given a valid JSON string, When deserializing to an order, Then it should create an order
+     * with correct properties.
+     */
     @Test
-    fun `should deserialize order from JSON`() {
+    fun `Given a valid JSON string, When deserializing to an order, Then it should create an order with correct properties`() {
         // Arrange
         val json =
                 """
@@ -89,9 +101,12 @@ class OrderTest {
         assertEquals(450, order.freshness)
     }
 
-    /** Tests deserialization with missing optional price field. */
+    /**
+     * Given JSON without price field, When deserializing to an order, Then it should use the
+     * default price value.
+     */
     @Test
-    fun `should deserialize order with missing price`() {
+    fun `Given JSON without price field, When deserializing to an order, Then it should use the default price value`() {
         // Arrange
         val json =
                 """
@@ -111,9 +126,12 @@ class OrderTest {
         assertEquals(0, order.price)
     }
 
-    /** Tests order with cold temperature. */
+    /**
+     * Given cold temperature specification, When creating an order, Then it should have temperature
+     * set to cold.
+     */
     @Test
-    fun `should create order with cold temperature`() {
+    fun `Given cold temperature specification, When creating an order, Then it should have temperature set to cold`() {
         // Arrange & Act
         val order =
                 Order(
@@ -128,9 +146,12 @@ class OrderTest {
         assertEquals("cold", order.temp)
     }
 
-    /** Tests order with frozen temperature. */
+    /**
+     * Given frozen temperature specification, When creating an order, Then it should have
+     * temperature set to frozen.
+     */
     @Test
-    fun `should create order with frozen temperature`() {
+    fun `Given frozen temperature specification, When creating an order, Then it should have temperature set to frozen`() {
         // Arrange & Act
         val order =
                 Order(

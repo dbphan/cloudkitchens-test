@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test
 class StoredOrderTest {
 
     @Test
-    fun `should create stored order with current timestamp`() {
+    fun `Given an order and location, When creating a stored order, Then it should have current timestamp`() {
         // Arrange
         val order = Order("test-1", "Pizza", "hot", 15, 300)
 
@@ -27,7 +27,7 @@ class StoredOrderTest {
     }
 
     @Test
-    fun `should calculate freshness at ideal temperature`() {
+    fun `Given an order at ideal temperature, When calculating freshness after elapsed time, Then it should decay at 1x rate`() {
         // Arrange
         val order = Order("test-1", "Pizza", "hot", 15, 100) // 100 seconds freshness
         val placedAt = Instant.parse("2024-01-01T12:00:00Z")
@@ -42,7 +42,7 @@ class StoredOrderTest {
     }
 
     @Test
-    fun `should calculate freshness at non-ideal temperature with 2x decay`() {
+    fun `Given an order at non-ideal temperature, When calculating freshness, Then it should decay at 2x rate`() {
         // Arrange
         val order = Order("test-1", "Pizza", "hot", 15, 100) // 100 seconds freshness
         val placedAt = Instant.parse("2024-01-01T12:00:00Z")
@@ -58,7 +58,7 @@ class StoredOrderTest {
     }
 
     @Test
-    fun `should return zero freshness when expired`() {
+    fun `Given an expired order, When calculating freshness, Then it should return zero`() {
         // Arrange
         val order = Order("test-1", "Pizza", "hot", 15, 100)
         val placedAt = Instant.parse("2024-01-01T12:00:00Z")
@@ -73,7 +73,7 @@ class StoredOrderTest {
     }
 
     @Test
-    fun `should identify fresh orders correctly`() {
+    fun `Given different check times, When verifying freshness, Then it should correctly identify fresh and expired states`() {
         // Arrange
         val order = Order("test-1", "Pizza", "hot", 15, 100)
         val placedAt = Instant.parse("2024-01-01T12:00:00Z")
@@ -89,7 +89,7 @@ class StoredOrderTest {
     }
 
     @Test
-    fun `should identify ideal temperature correctly for hot orders`() {
+    fun `Given a hot order, When checking ideal temperature, Then heater should be ideal and others non-ideal`() {
         // Arrange
         val order = Order("test-1", "Pizza", "hot", 15, 100)
 
@@ -100,7 +100,7 @@ class StoredOrderTest {
     }
 
     @Test
-    fun `should identify ideal temperature correctly for cold orders`() {
+    fun `Given a cold order, When checking ideal temperature, Then cooler should be ideal and others non-ideal`() {
         // Arrange
         val order = Order("test-1", "Ice Cream", "cold", 8, 60)
 
@@ -111,7 +111,7 @@ class StoredOrderTest {
     }
 
     @Test
-    fun `should identify ideal temperature correctly for room orders`() {
+    fun `Given a room temperature order, When checking ideal temperature, Then shelf should be ideal and others non-ideal`() {
         // Arrange
         val order = Order("test-1", "Bread", "room", 5, 120)
 
@@ -122,7 +122,7 @@ class StoredOrderTest {
     }
 
     @Test
-    fun `should calculate time until expiration correctly`() {
+    fun `Given a placed order, When calculating time until expiration, Then it should return remaining seconds correctly`() {
         // Arrange
         val order = Order("test-1", "Pizza", "hot", 15, 100)
         val placedAt = Instant.parse("2024-01-01T12:00:00Z")
@@ -137,7 +137,7 @@ class StoredOrderTest {
     }
 
     @Test
-    fun `should return zero time when already expired`() {
+    fun `Given an already expired order, When calculating time until expiration, Then it should return zero`() {
         // Arrange
         val order = Order("test-1", "Pizza", "hot", 15, 100)
         val placedAt = Instant.parse("2024-01-01T12:00:00Z")

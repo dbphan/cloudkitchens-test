@@ -23,195 +23,226 @@ import org.junit.jupiter.api.Test
  */
 class ClientTest {
 
-    /** Tests fetching a new problem successfully. */
+    /**
+     * Given a mock HTTP client with valid response, When fetching a new problem, Then it should
+     * return a problem with correct orders.
+     */
     @Test
-    fun `should fetch new problem successfully`() = runTest {
-        // Arrange
-        val orders =
-                listOf(
-                        Order("order-1", "Burger", "hot", 15, 300),
-                        Order("order-2", "Salad", "cold", 10, 600)
-                )
-        val ordersJson = Json.encodeToString(orders)
+    fun `Given a mock HTTP client with valid response, When fetching a new problem, Then it should return a problem with correct orders`() =
+            runTest {
+                // Arrange
+                val orders =
+                        listOf(
+                                Order("order-1", "Burger", "hot", 15, 300),
+                                Order("order-2", "Salad", "cold", 10, 600)
+                        )
+                val ordersJson = Json.encodeToString(orders)
 
-        val mockEngine = MockEngine { _ ->
-            respond(
-                    content = ByteReadChannel(ordersJson),
-                    status = HttpStatusCode.OK,
-                    headers =
-                            headersOf(
-                                    HttpHeaders.ContentType to
-                                            listOf(ContentType.Application.Json.toString()),
-                                    "x-test-id" to listOf("test-123")
-                            )
-            )
-        }
+                val mockEngine = MockEngine { _ ->
+                    respond(
+                            content = ByteReadChannel(ordersJson),
+                            status = HttpStatusCode.OK,
+                            headers =
+                                    headersOf(
+                                            HttpHeaders.ContentType to
+                                                    listOf(ContentType.Application.Json.toString()),
+                                            "x-test-id" to listOf("test-123")
+                                    )
+                    )
+                }
 
-        val httpClient = HttpClient(mockEngine) { install(ContentNegotiation) { json() } }
+                val httpClient = HttpClient(mockEngine) { install(ContentNegotiation) { json() } }
 
-        val client = Client(httpClient, "test-auth", "https://test.api.com")
+                val client = Client(httpClient, "test-auth", "https://test.api.com")
 
-        // Act
-        val problem = client.newProblem("test-problem", 12345L)
+                // Act
+                val problem = client.newProblem("test-problem", 12345L)
 
-        // Assert
-        assertEquals("test-123", problem.testId)
-        assertEquals(2, problem.orders.size)
-        assertEquals("order-1", problem.orders[0].id)
-        assertEquals("order-2", problem.orders[1].id)
+                // Assert
+                assertEquals("test-123", problem.testId)
+                assertEquals(2, problem.orders.size)
+                assertEquals("order-1", problem.orders[0].id)
+                assertEquals("order-2", problem.orders[1].id)
 
-        httpClient.close()
-    }
+                httpClient.close()
+            }
 
-    /** Tests fetching a new problem with null name and seed. */
+    /**
+     * Given null name and seed parameters, When fetching a problem, Then it should include empty
+     * name and seed in the request.
+     */
     @Test
-    fun `should fetch problem with null name and seed`() = runTest {
-        // Arrange
-        val orders = listOf(Order("order-1", "Pizza", "hot", 20, 450))
-        val ordersJson = Json.encodeToString(orders)
+    fun `Given null name and seed parameters, When fetching a problem, Then it should include empty name and seed in the request`() =
+            runTest {
+                // Arrange
+                val orders = listOf(Order("order-1", "Pizza", "hot", 20, 450))
+                val ordersJson = Json.encodeToString(orders)
 
-        val mockEngine = MockEngine { request ->
-            // Verify URL contains empty name and has seed parameter
-            assert(request.url.toString().contains("name="))
-            assert(request.url.toString().contains("seed="))
+                val mockEngine = MockEngine { request ->
+                    // Verify URL contains empty name and has seed parameter
+                    assert(request.url.toString().contains("name="))
+                    assert(request.url.toString().contains("seed="))
 
-            respond(
-                    content = ByteReadChannel(ordersJson),
-                    status = HttpStatusCode.OK,
-                    headers =
-                            headersOf(
-                                    HttpHeaders.ContentType to
-                                            listOf(ContentType.Application.Json.toString()),
-                                    "x-test-id" to listOf("test-456")
-                            )
-            )
-        }
+                    respond(
+                            content = ByteReadChannel(ordersJson),
+                            status = HttpStatusCode.OK,
+                            headers =
+                                    headersOf(
+                                            HttpHeaders.ContentType to
+                                                    listOf(ContentType.Application.Json.toString()),
+                                            "x-test-id" to listOf("test-456")
+                                    )
+                    )
+                }
 
-        val httpClient = HttpClient(mockEngine) { install(ContentNegotiation) { json() } }
+                val httpClient = HttpClient(mockEngine) { install(ContentNegotiation) { json() } }
 
-        val client = Client(httpClient, "test-auth", "https://test.api.com")
+                val client = Client(httpClient, "test-auth", "https://test.api.com")
 
-        // Act
-        val problem = client.newProblem(null, null)
+                // Act
+                val problem = client.newProblem(null, null)
 
-        // Assert
-        assertEquals("test-456", problem.testId)
-        assertEquals(1, problem.orders.size)
+                // Assert
+                assertEquals("test-456", problem.testId)
+                assertEquals(1, problem.orders.size)
 
-        httpClient.close()
-    }
+                httpClient.close()
+            }
 
-    /** Tests submitting a solution successfully. */
+    /**
+     * Given a valid action list, When submitting the solution, Then it should return success
+     * response.
+     */
     @Test
-    fun `should submit solution successfully`() = runTest {
-        // Arrange
-        val mockEngine = MockEngine { request ->
-            // Verify request has correct headers and body
-            assert(request.headers.contains("x-test-id", "test-789"))
-            assert(request.method == HttpMethod.Post)
+    fun `Given a valid action list, When submitting the solution, Then it should return success response`() =
+            runTest {
+                // Arrange
+                val mockEngine = MockEngine { request ->
+                    // Verify request has correct headers and body
+                    assert(request.headers.contains("x-test-id", "test-789"))
+                    assert(request.method == HttpMethod.Post)
 
-            respond(
-                    content = ByteReadChannel("Success: Score 100"),
-                    status = HttpStatusCode.OK,
-                    headers =
-                            headersOf(
-                                    HttpHeaders.ContentType to
-                                            listOf(ContentType.Text.Plain.toString())
-                            )
-            )
-        }
+                    respond(
+                            content = ByteReadChannel("Success: Score 100"),
+                            status = HttpStatusCode.OK,
+                            headers =
+                                    headersOf(
+                                            HttpHeaders.ContentType to
+                                                    listOf(ContentType.Text.Plain.toString())
+                                    )
+                    )
+                }
 
-        val httpClient = HttpClient(mockEngine) { install(ContentNegotiation) { json() } }
+                val httpClient = HttpClient(mockEngine) { install(ContentNegotiation) { json() } }
 
-        val client = Client(httpClient, "test-auth", "https://test.api.com")
+                val client = Client(httpClient, "test-auth", "https://test.api.com")
 
-        val actions =
-                listOf(
-                        Action(1609459200000000L, "order-1", PLACE, COOLER),
-                        Action(1609459201000000L, "order-1", PICKUP, COOLER)
-                )
+                val actions =
+                        listOf(
+                                Action(1609459200000000L, "order-1", PLACE, COOLER),
+                                Action(1609459201000000L, "order-1", PICKUP, COOLER)
+                        )
 
-        // Act
-        val result = client.solve("test-789", 500.milliseconds, 4.seconds, 8.seconds, actions)
+                // Act
+                val result =
+                        client.solve("test-789", 500.milliseconds, 4.seconds, 8.seconds, actions)
 
-        // Assert
-        assertNotNull(result)
-        assertEquals("Success: Score 100", result)
+                // Assert
+                assertNotNull(result)
+                assertEquals("Success: Score 100", result)
 
-        httpClient.close()
-    }
+                httpClient.close()
+            }
 
-    /** Tests error handling when fetching problem fails. */
+    /**
+     * Given an unauthorized HTTP response, When fetching a problem, Then it should throw an
+     * exception with error code.
+     */
     @Test
-    fun `should throw exception on fetch problem error`() = runTest {
-        // Arrange
-        val mockEngine = MockEngine { _ ->
-            respond(content = ByteReadChannel("Unauthorized"), status = HttpStatusCode.Unauthorized)
-        }
+    fun `Given an unauthorized HTTP response, When fetching a problem, Then it should throw an exception with error code`() =
+            runTest {
+                // Arrange
+                val mockEngine = MockEngine { _ ->
+                    respond(
+                            content = ByteReadChannel("Unauthorized"),
+                            status = HttpStatusCode.Unauthorized
+                    )
+                }
 
-        val httpClient = HttpClient(mockEngine)
-        val client = Client(httpClient, "invalid-auth", "https://test.api.com")
+                val httpClient = HttpClient(mockEngine)
+                val client = Client(httpClient, "invalid-auth", "https://test.api.com")
 
-        // Act & Assert
-        try {
-            client.newProblem("test", 123L)
-            throw AssertionError("Should have thrown IOException")
-        } catch (e: Exception) {
-            assert(e.message?.contains("401") == true)
-        }
+                // Act & Assert
+                try {
+                    client.newProblem("test", 123L)
+                    throw AssertionError("Should have thrown IOException")
+                } catch (e: Exception) {
+                    assert(e.message?.contains("401") == true)
+                }
 
-        httpClient.close()
-    }
+                httpClient.close()
+            }
 
-    /** Tests error handling when submitting solution fails. */
+    /**
+     * Given a bad request HTTP response, When submitting a solution, Then it should throw an
+     * exception with error code.
+     */
     @Test
-    fun `should throw exception on solve error`() = runTest {
-        // Arrange
-        val mockEngine = MockEngine { _ ->
-            respond(content = ByteReadChannel("Bad Request"), status = HttpStatusCode.BadRequest)
-        }
+    fun `Given a bad request HTTP response, When submitting a solution, Then it should throw an exception with error code`() =
+            runTest {
+                // Arrange
+                val mockEngine = MockEngine { _ ->
+                    respond(
+                            content = ByteReadChannel("Bad Request"),
+                            status = HttpStatusCode.BadRequest
+                    )
+                }
 
-        val httpClient = HttpClient(mockEngine)
-        val client = Client(httpClient, "test-auth", "https://test.api.com")
+                val httpClient = HttpClient(mockEngine)
+                val client = Client(httpClient, "test-auth", "https://test.api.com")
 
-        val actions = listOf(Action(1609459200000000L, "order-1", PLACE, COOLER))
+                val actions = listOf(Action(1609459200000000L, "order-1", PLACE, COOLER))
 
-        // Act & Assert
-        try {
-            client.solve("test-123", 500.milliseconds, 4.seconds, 8.seconds, actions)
-            throw AssertionError("Should have thrown IOException")
-        } catch (e: Exception) {
-            assert(e.message?.contains("400") == true)
-        }
+                // Act & Assert
+                try {
+                    client.solve("test-123", 500.milliseconds, 4.seconds, 8.seconds, actions)
+                    throw AssertionError("Should have thrown IOException")
+                } catch (e: Exception) {
+                    assert(e.message?.contains("400") == true)
+                }
 
-        httpClient.close()
-    }
+                httpClient.close()
+            }
 
-    /** Tests that duration parameters are converted to microseconds correctly. */
+    /**
+     * Given duration parameters, When submitting a solution, Then it should convert durations to
+     * microseconds correctly.
+     */
     @Test
-    fun `should convert duration parameters to microseconds`() = runTest {
-        // Arrange
-        var capturedBody = ""
+    fun `Given duration parameters, When submitting a solution, Then it should convert durations to microseconds correctly`() =
+            runTest {
+                // Arrange
+                var capturedBody = ""
 
-        val mockEngine = MockEngine { request ->
-            capturedBody = request.body.toString()
+                val mockEngine = MockEngine { request ->
+                    capturedBody = request.body.toString()
 
-            respond(content = ByteReadChannel("Success"), status = HttpStatusCode.OK)
-        }
+                    respond(content = ByteReadChannel("Success"), status = HttpStatusCode.OK)
+                }
 
-        val httpClient = HttpClient(mockEngine) { install(ContentNegotiation) { json() } }
+                val httpClient = HttpClient(mockEngine) { install(ContentNegotiation) { json() } }
 
-        val client = Client(httpClient, "test-auth", "https://test.api.com")
-        val actions = listOf(Action(1609459200000000L, "order-1", PLACE, COOLER))
+                val client = Client(httpClient, "test-auth", "https://test.api.com")
+                val actions = listOf(Action(1609459200000000L, "order-1", PLACE, COOLER))
 
-        // Act
-        client.solve("test-123", 500.milliseconds, 4.seconds, 8.seconds, actions)
+                // Act
+                client.solve("test-123", 500.milliseconds, 4.seconds, 8.seconds, actions)
 
-        // Assert
-        // The body should contain durations in microseconds
-        // 500ms = 500000 microseconds, 4s = 4000000 microseconds, 8s = 8000000 microseconds
-        assertNotNull(capturedBody)
+                // Assert
+                // The body should contain durations in microseconds
+                // 500ms = 500000 microseconds, 4s = 4000000 microseconds, 8s = 8000000 microseconds
+                assertNotNull(capturedBody)
 
-        httpClient.close()
-    }
+                httpClient.close()
+            }
 }

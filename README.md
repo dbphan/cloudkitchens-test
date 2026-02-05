@@ -151,3 +151,63 @@ If the shelf contains:
 - **Gradle** 8.4
 - **Ktor** 3.0.1 (HTTP client)
 - **Clikt** 5.0.1 (CLI framework)
+
+## Testing
+
+### Test Organization
+
+The project includes comprehensive test coverage with **95 tests** organized into two categories:
+
+- **Unit Tests** (72 tests): Located in `src/test/kotlin/`
+  - Test individual components in isolation
+  - Use Gherkin-style (Given-When-Then) descriptions for clarity
+  
+- **Integration Tests** (23 tests): Located in `src/integrationTest/kotlin/`
+  - Test complete workflows and system interactions
+  - Cover both success scenarios and failure cases
+
+### Running Tests
+
+```bash
+# Run unit tests only
+./gradlew test
+
+# Run integration tests only
+./gradlew integrationTest
+
+# Run all tests
+./gradlew test integrationTest
+```
+
+### Test Coverage
+
+**Unit Tests** cover:
+- Command-line parsing and validation
+- Order lifecycle and freshness calculations
+- Client API interactions and error handling
+- Storage container operations
+- Discard strategy value calculations
+- Driver pickup simulation
+- Kitchen manager coordination
+
+**Integration Tests** cover:
+- Complete order placement and pickup workflows
+- Capacity management and overflow handling
+- Concurrent operations and race conditions
+- API authentication and network failures
+- Malformed responses and serialization errors
+- Zero capacity edge cases
+- Temperature-specific storage constraints
+
+### Test Style
+
+All tests follow **Gherkin BDD** naming conventions for improved readability:
+
+```kotlin
+@Test
+fun `Given valid command-line options, When the application parses them, Then it should accept all options without errors`() {
+    // Test implementation
+}
+```
+
+This approach makes test intent immediately clear and serves as living documentation of system behavior.

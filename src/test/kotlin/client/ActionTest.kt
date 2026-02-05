@@ -13,9 +13,12 @@ import org.junit.jupiter.api.Test
  */
 class ActionTest {
 
-    /** Tests creating an action with long timestamp. */
+    /**
+     * Given a long timestamp value, When creating an action, Then it should have all properties
+     * correctly assigned.
+     */
     @Test
-    fun `should create action with long timestamp`() {
+    fun `Given a long timestamp value, When creating an action, Then it should have all properties correctly assigned`() {
         // Arrange
         val timestamp = 1609459200000000L // 2021-01-01 00:00:00 UTC in microseconds
         val orderId = "order-123"
@@ -32,9 +35,12 @@ class ActionTest {
         assertEquals(target, action.target)
     }
 
-    /** Tests creating an action with Instant timestamp. */
+    /**
+     * Given an Instant timestamp, When creating an action, Then it should convert to microseconds
+     * correctly.
+     */
     @Test
-    fun `should create action with Instant timestamp`() {
+    fun `Given an Instant timestamp, When creating an action, Then it should convert to microseconds correctly`() {
         // Arrange
         val instant = Clock.System.now()
         val orderId = "order-456"
@@ -51,9 +57,12 @@ class ActionTest {
         assertEquals(target, action.target)
     }
 
-    /** Tests all action type constants. */
+    /**
+     * Given action type constants, When checking their values, Then they should match expected
+     * action types.
+     */
     @Test
-    fun `should have all action type constants defined`() {
+    fun `Given action type constants, When checking their values, Then they should match expected action types`() {
         // Assert
         assertEquals("place", PLACE)
         assertEquals("pickup", PICKUP)
@@ -61,18 +70,24 @@ class ActionTest {
         assertEquals("discard", DISCARD)
     }
 
-    /** Tests all target location constants. */
+    /**
+     * Given target location constants, When checking their values, Then they should match expected
+     * storage locations.
+     */
     @Test
-    fun `should have all target constants defined`() {
+    fun `Given target location constants, When checking their values, Then they should match expected storage locations`() {
         // Assert
         assertEquals("heater", HEATER)
         assertEquals("cooler", COOLER)
         assertEquals("shelf", SHELF)
     }
 
-    /** Tests action with move operation. */
+    /**
+     * Given move operation parameters, When creating an action, Then it should have action type set
+     * to move.
+     */
     @Test
-    fun `should create move action`() {
+    fun `Given move operation parameters, When creating an action, Then it should have action type set to move`() {
         // Arrange
         val timestamp = Instant.parse("2024-01-01T12:00:00Z")
         val orderId = "order-789"
@@ -85,9 +100,12 @@ class ActionTest {
         assertEquals(SHELF, action.target)
     }
 
-    /** Tests action with discard operation. */
+    /**
+     * Given discard operation parameters, When creating an action, Then it should have action type
+     * set to discard.
+     */
     @Test
-    fun `should create discard action`() {
+    fun `Given discard operation parameters, When creating an action, Then it should have action type set to discard`() {
         // Arrange
         val timestamp = Instant.parse("2024-01-01T12:00:00Z")
         val orderId = "order-999"
@@ -100,9 +118,12 @@ class ActionTest {
         assertNotNull(action.timestamp)
     }
 
-    /** Tests timestamp conversion from milliseconds to microseconds. */
+    /**
+     * Given a timestamp in milliseconds, When creating an action with Instant, Then it should
+     * convert to microseconds.
+     */
     @Test
-    fun `should convert timestamp to microseconds correctly`() {
+    fun `Given a timestamp in milliseconds, When creating an action with Instant, Then it should convert to microseconds`() {
         // Arrange
         val instant = Instant.fromEpochMilliseconds(1000L) // 1 second
 
