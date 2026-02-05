@@ -31,7 +31,9 @@ jobs:
     - name: Run Docker container
       env:
         AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
+        ENDPOINT: ${{ secrets.ENDPOINT }}
       run: |
         docker run --rm \
           -e AUTH_TOKEN="${AUTH_TOKEN}" \
+          -e ENDPOINT="${ENDPOINT}" \
           cloudkitchens-test:latest
