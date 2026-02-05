@@ -14,7 +14,19 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import kotlinx.io.IOException
 
-class Main : CliktCommand() {
+class Main : CliktCommand(name = "challenge") {
+
+    override fun help(context: com.github.ajalt.clikt.core.Context): String {
+        return """
+            Cloud Kitchens Order Fulfillment System
+            
+            Simulates a kitchen order fulfillment system with intelligent storage management,
+            concurrent driver pickups, and value-based discard strategy.
+            
+            For invalid options, use --help to see all available options.
+        """.trimIndent()
+    }
+
     private val endpoint by
             option().default(System.getenv("ENDPOINT") ?: "https://api.cloudkitchens.com")
                     .help("Problem server endpoint")
