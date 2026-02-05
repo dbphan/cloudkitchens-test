@@ -1,259 +1,153 @@
 # Cloud Kitchens Take-Home Challenge
 
-A real-time food order fulfillment system for a delivery-only kitchen. Manages concurrent order placement, temperature-controlled storage, freshness tracking with decay, and driver pickup simulation.
+Author: Bao Phan
 
-## 🎉 Status: COMPLETE
+## How to run
 
-**All objectives achieved!** ✅ Successfully validated by Cloud Kitchens server.
+### Using Docker (Recommended)
 
-- **Last Test**: Problem ID 3, 48 orders, 96 actions
-- **Result**: PASS
-- **Execution**: ~35 seconds
-- **Success Rate**: 100% (0 discards, all pickups successful)
-
-## Features
-
-- ✅ **Thread-safe storage system**: Cooler (6 cold), Heater (6 hot), Shelf (12 room temp)
-- ✅ **Freshness tracking**: Orders decay at 1x at ideal temp, 2x at non-ideal temp
-- ✅ **Concurrent operations**: Multiple orders arriving and pickups simultaneously
-- ✅ **O(1) storage operations**: HashMap-based order lookup and retrieval
-- ✅ **Sub-linear discard algorithm**: PriorityQueue for O(1) minimum value lookup
-- ✅ **Driver pickup simulation**: Random timing within min-max interval using coroutines
-- ✅ **Full integration**: Complete execution flow from order placement to server validation
-- ✅ **Server validation**: Successfully passes Cloud Kitchens challenge server tests
-
-## Architecture
-
-### Package Structure
-
-```
-com.css.challenge
-├── client/         # HTTP client for challenge server
-│   ├── Client.kt      # API communication (newProblem, solve)
-│   ├── Order.kt       # Order data model
-│   ├── Action.kt      # Action tracking (place, pickup, discard)
-│   └── Problem.kt     # Problem wrapper
-├── model/          # Domain models
-│   └── StoredOrder.kt # Order with freshness tracking
-├── storage/        # Storage containers
-│   ├── StorageContainer.kt  # Interface for all storage
-│   ├── Cooler.kt            # Cold storage (6 capacity)
-│   ├── Heater.kt            # Hot storage (6 capacity)
-│   └── Shelf.kt             # Room temp storage (12 capacity)
-├── manager/        # Business logic
-│   ├── KitchenManager.kt    # Order placement, pickup orchestration, driver scheduling
-│   └── DiscardStrategy.kt   # Sub-linear discard algorithm with priority queue
-└── Main.kt         # CLI entry point
-```
-
-### Key Components
-
-**StoredOrder**: Wraps Order with placement timestamp and calculates real-time freshness
-- Freshness formula: `(shelfLife - decayRate * orderAge * tempMultiplier) / shelfLife`
-- Temperature multiplier: 1.0 at ideal temp, 2.0 at non-ideal temp
-- Tracks order location and movement history
-
-**Storage Containers**: Thread-safe implementations using Mutex
-- All operations are suspend functions for async/concurrent access
-- HashMap for O(1) lookup by order ID
-- Properties: capacity, size, temperature, isEmpty(), isFull()
-
-**DiscardStrategy**: Sub-linear order discard algorithm
-- PriorityQueue (min-heap) for O(1) minimum value lookup
-- Value calculation: `(freshness × freshnessLimit) / ((orderAge + 1) × tempMultiplier)`
-- Automatically maintains lowest-value order for shelf overflow scenarios
-
-**KitchenManager**: Orchestrates order placement and pickup
-- Places orders at ideal temperature storage first, falls back to shelf
-- Handles shelf overflow by moving orders or discarding lowest-value order
-- Schedules driver pickups with random delays using coroutines
-- Validates freshness during pickup (discards expired orders)
-- Tracks all actions (place, move, discard, pickup) for server submission
-
-## Technology Stack
-
-- **Language**: Kotlin 2.0.21
-- **JVM**: Java 21
-- **Build Tool**: Gradle 8.4 with Kotlin DSL
-- **HTTP Client**: Ktor 3.0.1 (CIO engine)
-- **CLI**: Clikt 5.0.1
-- **Serialization**: kotlinx-serialization-json 1.7.1
-- **DateTime**: kotlinx-datetime 0.6.1
-- **Concurrency**: Kotlin Coroutines with Mutex
-- **Testing**: JUnit Jupiter 5.11.3, kotlinx-coroutines-test
-- **Docker**: Rancher Desktop with gradle:jdk21-alpine
-
-## Setup
-
-### Prerequisites
-
-- Java 21 or later
-- Docker (optional, for containerized execution)
-
-### Configuration
-
-Create a `.env` file in the project root (never commit this):
+The `Dockerfile` defines a self-contained Java/Gradle reference environment.
+Build and run the program using [Docker](https://docs.docker.com/get-started/get-docker/):
 
 ```bash
-AUTH_TOKEN=your_token_here
-ENDPOINT=https://api.cloudkitchens.com
-```
-
-See `.env.example` for template.
-
-## Execution Flow
-
-The application executes the following workflow:
-
-1. **Fetch Problem**: Retrieves order list from Cloud Kitchens API
-2. **Initialize Kitchen**: Sets up thread-safe storage (Cooler, Heater, Shelf)
-3. **Process Orders**: Places orders sequentially at configured rate (--rate)
-   - Attempts ideal temperature storage first
-   - Falls back to shelf if ideal storage is full
-   - Handles shelf overflow with move-or-discard strategy
-4. **Schedule Pickups**: Launches concurrent coroutines for each order
-   - Random delay between --min and --max seconds
-   - Non-blocking execution using Kotlin coroutines
-5. **Wait for Completion**: Joins all pickup coroutines
-6. **Submit Results**: Sends action ledger to server for validation
-7. **Display Outcome**: Shows server validation result
-
-All actions (PLACE, MOVE, DISCARD, PICKUP) are tracked with timestamps for server submission.
-
-## How to Run
-
-### Local Execution (Recommended for Development)
-
-```bash
-# Using environment variables from .env
-./scripts/run.sh
-
-# Or directly with Gradle
-./gradlew run --args="--auth=<token>"
-
-# Stop the application
-./scripts/stop.sh
-```
-
-### Docker Execution
-
-```bash
-# Build and run with Docker
-./scripts/run-docker.sh
-
-# Or manually
+# Build the Docker image
 docker build -t challenge .
+
+# Run with authentication token
 docker run --rm -it challenge --auth=<token>
 
-# Stop Docker container
-./scripts/stop-docker.sh
+# Run with custom parameters
+docker run --rm -it challenge \
+  --auth=<token> \
+  --rate=500ms \
+  --min=4s \
+  --max=8s
+```
+
+### Using Gradle (Local Development)
+
+If Java 21 or later is installed locally, run the program directly:
+
+```bash
+# Run with Gradle wrapper
+./gradlew run --args="--auth=<token>"
+
+# Or build a standalone distribution
+./gradlew installDist
+./build/install/challenge/bin/challenge --auth=<token>
 ```
 
 ### CLI Options
 
-```bash
---auth=<token>        # Authentication token (required, or set AUTH_TOKEN env var)
---endpoint=<url>      # API endpoint (optional, defaults to env var or api.cloudkitchens.com)
---name=<problem>      # Problem name (optional)
---seed=<number>       # Seed for deterministic problems (optional)
---rate=<duration>     # Order rate, e.g., 500ms (optional, default: 500ms)
---min=<seconds>       # Min driver pickup time (optional)
---max=<seconds>       # Max driver pickup time (optional)
 ```
-
-## Testing
-
-Run all tests:
-
-```bash
-./gradlew test
-```
-
-View detailed test report:
-
-```bash
-open build/reports/tests/test/index.html
-```
-
-### Test Coverage
-
-**72 tests total** (100% passing):
-- **StoredOrderTest** (10 tests): Freshness calculations, temperature matching, expiration
-- **StorageContainerTest** (13 tests): Cooler, Heater, Shelf capacity and operations
-- **KitchenManagerTest** (7 tests): Order placement logic and action tracking
-- **ClientTest** (6 tests): API client operations (fetch problem, submit ledger)
-- **DiscardStrategyTest** (12 tests): Priority queue discard algorithm, value calculations
-- **DriverPickupSimulationTest** (7 tests): Random pickup delays, concurrent operations
-- **Integration tests** (17 tests): Complete workflows including placement, storage, and pickup
-- **MainTest** (7 tests): CLI argument parsing and validation
-- **ClientTest** (4 tests): HTTP client and API communication
-- **OrderTest** (9 tests): Order serialization and validation
-- **ActionTest** (5 tests): Action tracking and constants
-- **ProblemTest** (5 tests): Problem wrapper and parsing
-
-## Development
-
-### Code Style
-
-- Follow Kotlin official conventions
-- 4-space indentation
-- Maximum line length: 120 characters
-- Use immutability (val) by default
-- Document all public APIs with KDoc
-
-### Concurrency Patterns
-
-- All storage operations use `Mutex.withLock` for thread safety
-- Suspend functions for all async operations
-- Structured concurrency with proper scope management
-- Never block the main thread
-
-### Git Workflow
-
-```bash
-# Work on develop branch
-git checkout develop
-
-# Run tests before committing
-./gradlew test
-
-# Commit with conventional format
-git add <files>
-git commit -m "feat: description"
-git push origin develop
+--auth=<token>        Authentication token (required)
+--endpoint=<url>      API endpoint (optional, default: https://api.cloudkitchens.com)
+--name=<problem>      Problem name (optional)
+--seed=<number>       Seed for deterministic problems (optional)
+--rate=<duration>     Order rate (optional, default: 500ms)
+--min=<duration>      Minimum pickup time (optional, default: 4s)
+--max=<duration>      Maximum pickup time (optional, default: 8s)
 ```
 
 ## Discard Criteria
 
-**Current Implementation**: When shelf is full, the system needs to discard the order with the lowest value.
+### Algorithm: Priority Queue (Min-Heap) with Value-Based Selection
 
-**Value Formula**: 
+When the overflow shelf is full and no existing shelf orders can be moved to their ideal storage, the system discards the order with the **lowest calculated value**.
+
+### Value Calculation Formula
+
+```kotlin
+value = (freshness × shelfLife) / (orderAge × temperatureMultiplier)
 ```
-value = (freshness * shelfLife * decayModifier) / (orderAge * tempMultiplier)
+
+**Where:**
+- `freshness`: Current freshness ratio (0.0 to 1.0)
+- `shelfLife`: Maximum shelf life in seconds
+- `orderAge`: Time elapsed since placement (seconds + 1 to avoid division by zero)
+- `temperatureMultiplier`: 1.0 at ideal temperature, 2.0 at non-ideal temperature
+
+### Rationale
+
+**Why this approach:**
+
+1. **Sub-linear Time Complexity**: Uses a PriorityQueue (min-heap) for O(log n) insertion and O(1) minimum value lookup, meeting the "better than O(n)" requirement.
+
+2. **Balances Multiple Factors**: The formula considers:
+   - **Freshness**: Lower freshness = lower value (more likely to discard)
+   - **Shelf Life**: Orders with longer shelf life have higher value (keep longer-lasting items)
+   - **Age**: Older orders have lower value (prefer discarding old items)
+   - **Temperature Mismatch**: Orders at non-ideal temperature decay faster, lowering their value
+
+3. **Fair and Predictable**: Orders that are:
+   - Nearly expired (low freshness)
+   - Stored at wrong temperature (high multiplier)
+   - Already old (high age)
+   - Have short shelf life
+   
+   ...will naturally have the lowest value and be discarded first.
+
+4. **Automatic Prioritization**: The PriorityQueue automatically maintains the order, so we always know which order has the lowest value without scanning all orders.
+
+### Implementation
+
+```kotlin
+class DiscardStrategy {
+    private val orderQueue = PriorityQueue<StoredOrder>(
+        compareBy { calculateValue(it) }
+    )
+    
+    private fun calculateValue(order: StoredOrder): Double {
+        val freshness = order.freshness()
+        val age = order.age().inWholeSeconds + 1
+        val tempMultiplier = order.temperatureMultiplier()
+        val shelfLife = order.order.shelfLife.toDouble()
+        
+        return (freshness * shelfLife) / (age * tempMultiplier)
+    }
+    
+    fun pollLowestValueOrder(): StoredOrder? = orderQueue.poll()
+}
 ```
 
-**Sub-linear Algorithm** (in progress):
-- Maintain a priority queue (heap) of orders sorted by value
-- O(log n) insertion and O(1) minimum value retrieval
-- When shelf is full, check if any shelf orders can move to ideal storage
-- If no space available, discard the order with lowest value
-- Target: Better than O(n) linear scan
+### Performance Characteristics
 
-## Progress
+- **Add Order**: O(log n) - heap insertion
+- **Get Lowest Value**: O(log n) - poll from heap
+- **Remove by ID**: O(n) - requires linear search (acceptable for rare operation)
 
-See [PROGRESS.md](PROGRESS.md) for detailed checklist.
+### Example Scenario
 
-**Completed (~30%)**:
-- Storage system foundation
-- Freshness tracking with decay
-- Basic order placement and pickup
-- Comprehensive test suite
+If the shelf contains:
+1. Fresh pizza (90% fresh, 5 min old, wrong temp) → value ≈ 9.0
+2. Aging salad (40% fresh, 10 min old, correct temp) → value ≈ 2.4
+3. Old burger (20% fresh, 15 min old, wrong temp) → value ≈ 0.67
 
-**In Progress**:
-- Sub-linear discard algorithm
-- Shelf overflow handling (move/discard)
-- Driver pickup simulation
+**Result**: The old burger (#3) would be discarded first due to its lowest value.
 
-**Not Started**:
-- Full integration in Main.kt
-- Server validation and consistent passing
+## Architecture
+
+### Storage System
+- **Cooler**: 6 cold orders at ideal temperature
+- **Heater**: 6 hot orders at ideal temperature  
+- **Shelf**: 12 orders at room temperature (overflow storage)
+
+### Concurrency
+- **Thread-safe**: All storage operations protected by Mutex
+- **Coroutines**: Driver pickups run concurrently with random delays
+- **Structured Concurrency**: All operations properly scoped and cleaned up
+
+### Placement Strategy
+1. Try ideal temperature storage first (cooler/heater)
+2. Fall back to shelf if ideal is full
+3. If shelf is also full:
+   - Try moving a shelf order to its ideal storage
+   - If no moves possible, discard lowest-value order using PriorityQueue
+   - Place new order in freed space
+
+### Technology Stack
+- **Kotlin** 2.0.21 with coroutines
+- **Java** 21
+- **Gradle** 8.4
+- **Ktor** 3.0.1 (HTTP client)
+- **Clikt** 5.0.1 (CLI framework)
